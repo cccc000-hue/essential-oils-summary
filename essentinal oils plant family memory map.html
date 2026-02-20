@@ -37,8 +37,45 @@
             border-bottom: 1px solid #eee;
             flex-shrink: 0;
             z-index: 20;
+            gap: 10px; /* 增加間距 */
         }
-        h1 { font-size: 1rem; font-weight: 700; color: var(--primary); margin: 0; }
+
+        /* 新增：標題左側容器 (包含按鈕與標題) */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden; /* 防止標題過長撐開 */
+        }
+
+        /* 新增：返回首頁按鈕樣式 */
+        .home-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background-color: var(--tag-bg);
+            color: var(--primary);
+            border-radius: 8px;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .home-btn:active {
+            background-color: #e0dce6;
+        }
+
+        h1 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            color: var(--primary); 
+            margin: 0; 
+            white-space: nowrap; /* 不換行 */
+            overflow: hidden;
+            text-overflow: ellipsis; /* 過長顯示... */
+        }
+
         .counter { 
             background: var(--tag-bg); 
             color: var(--primary); 
@@ -46,6 +83,7 @@
             border-radius: 12px; 
             font-size: 0.85rem; 
             font-weight: 600; 
+            flex-shrink: 0;
         }
 
         /* 搜尋區 */
@@ -208,7 +246,17 @@
 <body>
 
     <header>
-        <h1>植物科屬功能精油記憶卡</h1>
+        <!-- 修改處：加入 header-left 包含按鈕與標題 -->
+        <div class="header-left">
+            <!-- 返回主頁按鈕 (連結設為 index.html) -->
+            <a href="index.html" class="home-btn" aria-label="返回主目錄">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </a>
+            <h1>植物科屬功能精油記憶卡</h1>
+        </div>
         <div class="counter" id="counter">Loading...</div>
     </header>
 
