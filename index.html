@@ -7,11 +7,10 @@
     <style>
         :root {
             --primary: #6b4c9a;
-            --primary-light: #8e72b6;
-            --bg: #f9f9f9;
+            --bg: #f5f5f7;
             --card-bg: #ffffff;
             --text-main: #333333;
-            --text-sub: #555555;
+            --text-sub: #666666;
             --tag-bg: #f3f0f7;
             --border-color: #e0e0e0;
         }
@@ -22,29 +21,29 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
-            height: 100vh;
+            height: 100vh; /* 滿屏高度 */
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* 防止整個頁面滾動 */
         }
 
         /* 頂部導航 */
         header { 
-            padding: 15px; 
+            padding: 12px 16px; 
             background: var(--card-bg); 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-            z-index: 20; 
+            border-bottom: 1px solid #eee;
             flex-shrink: 0;
+            z-index: 20;
         }
-        h1 { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin: 0; }
+        h1 { font-size: 1rem; font-weight: 700; color: var(--primary); margin: 0; }
         .counter { 
             background: var(--tag-bg); 
             color: var(--primary); 
-            padding: 4px 12px; 
-            border-radius: 20px; 
+            padding: 4px 10px; 
+            border-radius: 12px; 
             font-size: 0.85rem; 
             font-weight: 600; 
         }
@@ -53,200 +52,156 @@
         .search-container { 
             padding: 10px 16px; 
             background: var(--bg); 
-            z-index: 10; 
             flex-shrink: 0;
         }
         .search-input-wrapper { position: relative; }
         .search-input { 
             width: 100%; 
-            padding: 12px 40px 12px 16px; 
-            border-radius: 12px; 
+            padding: 10px 35px 10px 12px; 
+            border-radius: 10px; 
             border: 1px solid #ddd; 
-            font-size: 1rem; 
+            font-size: 0.95rem; 
             outline: none; 
             background: white;
-            transition: border-color 0.2s;
         }
         .search-input:focus { border-color: var(--primary); }
         .clear-btn { 
             position: absolute; 
             right: 0; top: 0; bottom: 0;
-            width: 40px; 
+            width: 35px; 
             background: none; 
             border: none; 
-            font-size: 1.2rem; 
-            display: none; 
+            font-size: 1.1rem; 
             color: #999; 
+            display: none;
             cursor: pointer;
         }
 
-        /* 卡片區域 (3D 場景) */
-        .scene { 
+        /* 主要內容區 (卡片) */
+        .main-area { 
             flex: 1; 
-            margin: 10px 16px 16px; 
-            perspective: 1000px; 
+            margin: 0 16px 16px; 
             position: relative; 
-            min-height: 0; 
+            min-height: 0; /* 重要：讓 flex item 可以縮小 */
+            display: flex;
+            flex-direction: column;
         }
         
         .card { 
-            width: 100%; 
-            height: 100%; 
-            position: relative; 
-            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); 
-            transform-style: preserve-3d; 
-        }
-        .card.is-flipped { transform: rotateY(180deg); }
-
-        .card__face { 
-            position: absolute; 
-            width: 100%; 
-            height: 100%; 
-            backface-visibility: hidden; 
-            -webkit-backface-visibility: hidden; 
-            border-radius: 16px; 
-            background: var(--card-bg); 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1); 
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
             border: 1px solid rgba(0,0,0,0.05);
         }
 
-        /* 卡片正面 */
-        .card__face--front { 
-            align-items: center; 
-            justify-content: center; 
-            padding: 32px; 
-            text-align: center; 
-            transform: rotateY(0deg); 
-            z-index: 2; 
-            background: linear-gradient(135deg, #ffffff 0%, #fcfaff 100%);
+        /* 卡片頭部 (固定) */
+        .card-header {
+            padding: 20px;
+            background: linear-gradient(to bottom, #fff, #fcfcfc);
+            border-bottom: 1px solid #f0f0f0;
+            text-align: center;
+            flex-shrink: 0;
         }
-        .icon-circle { 
-            width: 100px; 
-            height: 100px; 
-            background: var(--tag-bg); 
-            border-radius: 50%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            margin-bottom: 24px; 
-            color: var(--primary); 
-            font-size: 3rem; 
-            box-shadow: 0 4px 12px rgba(107, 76, 154, 0.15);
-        }
-        .front-cn { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; color: var(--text-main); }
-        .front-en { font-size: 1.2rem; color: #666; font-style: italic; font-weight: 500; }
-        .tap-hint { 
-            margin-top: 40px; 
-            font-size: 0.8rem; 
-            color: #999; 
-            background: #f0f0f0; 
-            padding: 8px 20px; 
-            border-radius: 20px; 
+        .card-cn { font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+        .card-en { font-size: 1rem; color: #888; font-style: italic; font-family: serif; }
+
+        /* 卡片內容 (可滾動) */
+        .card-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
         }
 
-        /* 卡片背面 */
-        .card__face--back { transform: rotateY(180deg); }
-        
-        .back-header { 
-            padding: 16px; 
-            border-bottom: 1px solid #eee; 
-            text-align: center; 
-            background: #fff; 
-            flex-shrink: 0; 
-            border-left: 6px solid var(--primary);
-        }
-        .back-header h3 { font-size: 1.3rem; margin-bottom: 4px; color: var(--primary); }
-        .back-header p { font-size: 1rem; color: #666; font-style: italic; }
-
-        .back-content { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 20px; 
-            -webkit-overflow-scrolling: touch; 
-            background-color: var(--secondary-color);
-        }
-        
-        .section { margin-bottom: 24px; }
+        .section { margin-bottom: 25px; }
         .section-title { 
-            font-size: 0.95rem; 
+            font-size: 0.9rem; 
             font-weight: 700; 
-            color: #444; 
+            color: #999; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
-            border-bottom: 1px solid #ddd; 
-            padding-bottom: 6px; 
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background: var(--primary);
+            margin-right: 8px;
+            border-radius: 2px;
         }
 
         /* 列表樣式 */
-        ul { padding-left: 20px; margin: 0; }
-        li { margin-bottom: 10px; font-size: 0.95rem; line-height: 1.5; color: #333; }
+        ul { padding-left: 5px; list-style: none; }
+        li { margin-bottom: 8px; font-size: 1rem; line-height: 1.6; color: #444; }
         
-        /* 精油標籤樣式 - 嚴格依照要求 */
-        .oil-item {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
+        /* 精油標籤 */
+        .oil-item { margin-bottom: 8px; }
         .oil-name {
-            font-weight: bold;
+            font-weight: 600;
             color: #2c3e50;
-            background-color: #fff;
-            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
             padding: 2px 8px;
-            border-radius: 8px;
+            border-radius: 6px;
             display: inline-block;
-            font-size: 0.95rem;
         }
         .latin-oil {
             font-style: italic;
-            font-weight: normal;
-            font-size: 0.95rem;
-            color: #555;
+            font-size: 0.9rem;
+            color: #666;
             margin-left: 4px;
         }
 
-        /* 底部控制區 */
+        /* 底部按鈕區 */
         .controls { 
             padding: 0 16px 20px; 
             display: flex; 
-            gap: 12px; 
-            z-index: 10; 
+            gap: 15px; 
             flex-shrink: 0;
         }
         .btn { 
             border: none; 
-            padding: 16px; 
-            border-radius: 16px; 
+            padding: 15px; 
+            border-radius: 12px; 
             font-size: 1rem; 
             font-weight: 600; 
             flex: 1; 
             cursor: pointer; 
             transition: all 0.2s; 
-            -webkit-appearance: none; 
+            background: white; 
+            border: 1px solid #ddd; 
+            color: var(--text-main);
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-        .btn-nav { background: #fff; border: 1px solid #ddd; color: var(--text-sub); }
-        .btn-flip { background: var(--primary); color: white; flex: 2; border: 1px solid var(--primary); box-shadow: 0 4px 10px rgba(107, 76, 154, 0.3); }
+        .btn:active { background: #f0f0f0; transform: scale(0.98); }
+        .btn-primary { 
+            background: var(--primary); 
+            color: white; 
+            border: none;
+            box-shadow: 0 4px 10px rgba(107, 76, 154, 0.3);
+        }
 
-        /* 無結果顯示 */
+        /* 無結果 */
         .no-results { 
             display: none; 
             flex-direction: column; 
             align-items: center; 
             justify-content: center; 
             height: 100%; 
-            text-align: center; 
-            color: var(--text-sub); 
+            color: #999; 
         }
 
         @media (max-width: 600px) {
-            .front-cn { font-size: 1.8rem; }
-            .front-en { font-size: 1rem; }
-            .latin-oil { display: block; margin-left: 0; margin-top: 2px; }
+            .card-cn { font-size: 1.6rem; }
+            .latin-oil { display: block; margin-left: 0; margin-top: 2px; font-size: 0.85rem; }
         }
     </style>
 </head>
@@ -254,7 +209,7 @@
 
     <header>
         <h1>植物科屬功能精油記憶卡</h1>
-        <div class="counter" id="counter">載入中...</div>
+        <div class="counter" id="counter">Loading...</div>
     </header>
 
     <div class="search-container">
@@ -264,50 +219,41 @@
         </div>
     </div>
 
-    <div class="scene">
+    <div class="main-area">
         <div class="no-results" id="noResults">
             <div style="font-size: 3rem; margin-bottom: 10px;">🔍</div>
             <p>找不到相關資料</p>
         </div>
 
         <div class="card" id="card">
-            <!-- 正面 -->
-            <div class="card__face card__face--front">
-                <div class="icon-circle">🌿</div>
-                <div class="front-cn" id="frontCn"></div>
-                <div class="front-en" id="frontEn"></div>
-                <div class="tap-hint">點擊翻牌</div>
+            <!-- 上半部：標題 -->
+            <div class="card-header">
+                <div class="card-cn" id="cardCn"></div>
+                <div class="card-en" id="cardEn"></div>
             </div>
 
-            <!-- 背面 -->
-            <div class="card__face card__face--back">
-                <div class="back-header">
-                    <h3 id="backCn"></h3>
-                    <p id="backEn"></p>
+            <!-- 下半部：內容 (可滑動) -->
+            <div class="card-body">
+                <div class="section">
+                    <div class="section-title">代表精油</div>
+                    <div id="cardOils"></div>
                 </div>
-                <div class="back-content">
-                    <div class="section">
-                        <div class="section-title">代表精油</div>
-                        <div id="valOils"></div>
-                    </div>
-                    <div class="section">
-                        <div class="section-title">主要功能</div>
-                        <div id="valFuncs"></div>
-                    </div>
+                <div class="section">
+                    <div class="section-title">主要功能</div>
+                    <div id="cardFuncs"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="controls">
-        <button class="btn btn-nav" id="prevBtn">上一張</button>
-        <button class="btn btn-flip" id="flipBtn">查看答案</button>
-        <button class="btn btn-nav" id="nextBtn">下一張</button>
+        <button class="btn" id="prevBtn">← 上一張</button>
+        <button class="btn btn-primary" id="nextBtn">下一張 →</button>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 資料庫：完全依照您提供的 HTML 內容整理，包含所有中英文及拉丁學名
+            // 資料庫 (與之前相同)
             var familyData = [
                 {
                     cn: "番荔枝科",
@@ -369,7 +315,7 @@
                     oils: `<ul>
                         <li><span class="oil-name">天竺葵 Geranium</span> <span class="latin-oil">(Pelargonium graveolens)</span></li>
                         <li><span class="oil-name">玫瑰天竺葵 Rose Geranium</span> <span class="latin-oil">(Pelargonium roseum)</span></li>
-                        <li><span class="oil-name">大根老鸛草 True Geranium / Zdravets</span> <span class="latin-oil">(Geranium macrorrhizum)</span></li>
+                        <li><span class="oil-name">大根老鸛草 True Geranium</span> <span class="latin-oil">(Geranium macrorrhizum)</span></li>
                     </ul>`,
                     func: `<ul><li>抗紅腫發炎</li><li>殺菌</li><li>抗毒素</li><li>滋補神經</li><li>平伏</li><li>洗淨及冷卻皮膚</li></ul>`
                 },
@@ -433,7 +379,7 @@
                     cn: "木犀科",
                     latin: "Oleaceae",
                     oils: `<ul>
-                        <li><span class="oil-name">茉莉 Jasmine</span> <span class="latin-oil">(Jasminum sambac / Jasminum officinale var. Grandiflorum / Jasminum auriculatum)</span></li>
+                        <li><span class="oil-name">茉莉 Jasmine</span> <span class="latin-oil">(Jasminum sambac / officinale)</span></li>
                         <li><span class="oil-name">桂花 Osmanthus</span> <span class="latin-oil">(Osmanthus fragrans)</span></li>
                     </ul>`,
                     func: `<ul><li>抗憂鬱</li><li>抗紅腫發炎</li><li>驅風</li><li>鎮靜</li></ul>`
@@ -444,8 +390,8 @@
                     oils: `<ul>
                         <li><span class="oil-name">大西洋雪松 Cedarwood Atlas</span> <span class="latin-oil">(Cedrus atlantica)</span></li>
                         <li><span class="oil-name">歐洲赤松 Pine</span> <span class="latin-oil">(Pinus sylvestris)</span></li>
-                        <li><span class="oil-name">膠冷杉 Fir (Balsam Fir)</span> <span class="latin-oil">(Abies balsamea)</span></li>
-                        <li><span class="oil-name">雲杉 Spruce</span> (例如: <span class="oil-name">黑雲杉 Black Spruce</span> <span class="latin-oil">Picea mariana</span>)</li>
+                        <li><span class="oil-name">膠冷杉 Fir</span> <span class="latin-oil">(Abies balsamea)</span></li>
+                        <li><span class="oil-name">黑雲杉 Black Spruce</span> <span class="latin-oil">(Picea mariana)</span></li>
                     </ul>`,
                     func: `<ul><li>高度殺菌</li><li>黏膜炎</li><li>提升腎上腺素</li><li>緩和呼吸道發炎</li><li>處理關節炎</li></ul>`
                 },
@@ -488,7 +434,7 @@
                         <li><span class="oil-name">苦橙 Orange bitter</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
                         <li><span class="oil-name">甜橙 Orange sweet</span> <span class="latin-oil">(Citrus sinensis)</span></li>
                         <li><span class="oil-name">古龍葉 Petitgrain</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
-                        <li><span class="oil-name">阿米香樹/西印度檀香 Amyris</span> <span class="latin-oil">(Amyris balsamifera)</span></li>
+                        <li><span class="oil-name">阿米香樹 Amyris</span> <span class="latin-oil">(Amyris balsamifera)</span></li>
                     </ul>`,
                     func: `<ul><li>對消化系統有平衡及刺激作用</li><li>殺菌</li><li>鎮靜神經</li><li>精神大振</li><li>抗病毒</li></ul>`
                 },
@@ -496,14 +442,14 @@
                     cn: "檀香科",
                     latin: "Santalaceae",
                     oils: `<ul>
-                        <li><span class="oil-name">檀香/東印度檀香 Sandalwood</span> <span class="latin-oil">(Santalum album)</span></li>
+                        <li><span class="oil-name">檀香 Sandalwood</span> <span class="latin-oil">(Santalum album)</span></li>
                         <li><span class="oil-name">澳洲檀香 Sandalwood, Australia</span> <span class="latin-oil">(Santalum spicatum)</span></li>
                     </ul>`,
                     func: `<ul><li>平衡神經系統</li><li>呼吸系統及排泄系統</li><li>乾燥皮膚</li><li>用溶劑式提煉</li><li>調節賀爾蒙</li></ul>`
                 },
                 {
                     cn: "安息香科",
-                    latin: "Styracaceae / Styrax",
+                    latin: "Styracaceae",
                     oils: `<ul><li><span class="oil-name">安息香 Benzoin</span> <span class="latin-oil">(Styrax benzoin)</span></li></ul>`,
                     func: `<ul><li>抗黏膜炎</li><li>化痰</li><li>皮膚治療</li><li>關節痛楚</li><li>循環不佳</li></ul>`
                 },
@@ -542,14 +488,12 @@
 
             // --- 變數 ---
             var currentIndex = 0;
-            var isFlipped = false;
             var filteredData = familyData.slice();
 
             // --- 元素 ---
             var card = document.getElementById('card');
             var prevBtn = document.getElementById('prevBtn');
             var nextBtn = document.getElementById('nextBtn');
-            var flipBtn = document.getElementById('flipBtn');
             var searchInput = document.getElementById('searchInput');
             var clearBtn = document.getElementById('clearBtn');
             var counter = document.getElementById('counter');
@@ -564,71 +508,32 @@
                     return;
                 }
 
-                card.style.display = 'block';
+                card.style.display = 'flex';
                 noResults.style.display = 'none';
                 
                 var data = filteredData[currentIndex];
                 counter.innerText = (currentIndex + 1) + " / " + filteredData.length;
 
-                // 填充正面
-                document.getElementById('frontCn').innerText = data.cn;
-                document.getElementById('frontEn').innerText = data.latin;
-
-                // 填充背面
-                document.getElementById('backCn').innerText = data.cn;
-                document.getElementById('backEn').innerText = data.latin;
-                document.getElementById('valOils').innerHTML = data.oils;
-                document.getElementById('valFuncs').innerHTML = data.func;
-
-                // 重置翻轉狀態
-                if (isFlipped) {
-                    card.classList.remove('is-flipped');
-                    isFlipped = false;
-                    flipBtn.innerText = "查看答案";
-                    flipBtn.style.background = "var(--primary)";
-                    flipBtn.style.color = "white";
-                }
-            }
-
-            function handleFlip() {
-                if (filteredData.length === 0) return;
-                isFlipped = !isFlipped;
-                if (isFlipped) {
-                    card.classList.add('is-flipped');
-                    flipBtn.innerText = "返回";
-                    flipBtn.style.background = "#fff";
-                    flipBtn.style.color = "#333";
-                } else {
-                    card.classList.remove('is-flipped');
-                    flipBtn.innerText = "查看答案";
-                    flipBtn.style.background = "var(--primary)";
-                    flipBtn.style.color = "white";
-                }
+                // 填充內容
+                document.getElementById('cardCn').innerText = data.cn;
+                document.getElementById('cardEn').innerText = data.latin;
+                document.getElementById('cardOils').innerHTML = data.oils;
+                document.getElementById('cardFuncs').innerHTML = data.func;
+                
+                // 每次切換時，將內容捲動回最上方
+                document.querySelector('.card-body').scrollTop = 0;
             }
 
             function handleNext() {
                 currentIndex++;
                 if (currentIndex >= filteredData.length) currentIndex = 0;
-                resetAndRender();
+                renderCard();
             }
 
             function handlePrev() {
                 currentIndex--;
                 if (currentIndex < 0) currentIndex = filteredData.length - 1;
-                resetAndRender();
-            }
-
-            function resetAndRender() {
-                if(isFlipped) {
-                    card.classList.remove('is-flipped');
-                    isFlipped = false;
-                    flipBtn.innerText = "查看答案";
-                    flipBtn.style.background = "var(--primary)";
-                    flipBtn.style.color = "white";
-                    setTimeout(function(){ renderCard(); }, 200);
-                } else {
-                    renderCard();
-                }
+                renderCard();
             }
 
             function handleSearch() {
@@ -638,7 +543,6 @@
                     filteredData = [];
                     for (var i = 0; i < familyData.length; i++) {
                         var item = familyData[i];
-                        // 搜尋範圍：中文科屬、拉丁科屬、精油內容(含HTML標籤內的文字)、功效
                         if (
                             (item.cn && item.cn.indexOf(query) > -1) ||
                             (item.latin && item.latin.toLowerCase().indexOf(query) > -1) ||
@@ -662,8 +566,6 @@
             }
 
             // --- 綁定事件 ---
-            if (card) card.onclick = handleFlip;
-            if (flipBtn) flipBtn.onclick = handleFlip;
             if (nextBtn) nextBtn.onclick = handleNext;
             if (prevBtn) prevBtn.onclick = handlePrev;
             if (searchInput) searchInput.oninput = handleSearch;
