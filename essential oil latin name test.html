@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>精油拉丁學名背誦</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .latin-input {
+            font-family: 'Courier New', Courier, monospace; 
+            letter-spacing: 0.5px;
+        }
+        
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen flex flex-col max-w-2xl mx-auto bg-white shadow-2xl relative overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-20 shadow-md">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="location.reload()">
+                <div class="bg-emerald-500 p-1.5 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold leading-none">精油拉丁學名背誦</h1>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider">Smart Memory V3.1</span>
+                </div>
+            </div>
+            <button onclick="app.resetMemory()" class="text-[10px] bg-slate-800 px-2 py-1 rounded border border-slate-700 hover:bg-slate-700">重置紀錄</button>
+        </div>
+
+        <!-- Storage Warning -->
+        <div id="storage-warning" class="hidden bg-yellow-50 text-yellow-800 text-[10px] p-2 text-center border-b border-yellow-100">
+            ⚠️ 沙盒模式：錯題紀錄將在重新整理後消失
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="progress-container" class="hidden w-full bg-slate-100 h-1.5">
+            <div id="progress-bar" class="h-1.5 bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-grow flex flex-col relative h-full overflow-y-auto">
+
+            <!-- 1. HOME SCREEN -->
+            <div id="screen-home" class="flex-grow flex flex-col p-6 fade-in">
+                <div class="text-center mt-8 mb-8">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-2">精油知識特訓</h2>
+                    <p class="text-slate-500 text-sm">輸入拉丁學名，答題後<br>完整顯示科屬、功效、成份與禁忌。</p>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mb-6 flex justify-between items-center">
+                    <div class="text-center w-1/2 border-r border-slate-100">
+                        <div class="text-3xl font-bold text-slate-800" id="stat-total-items">0</div>
+                        <div class="text-xs text-slate-400 font-bold uppercase mt-1">總單字量</div>
+                    </div>
+                    <div class="text-center w-1/2">
+                        <div class="text-3xl font-bold text-red-500" id="stat-wrong-items">0</div>
+                        <div class="text-xs text-red-800 font-bold uppercase mt-1">待複習錯題</div>
+                    </div>
+                </div>
+
+                <div class="space-y-4 mt-auto mb-8">
+                    <button id="btn-review" onclick="app.startQuiz('review')" class="hidden w-full bg-red-500 hover:bg-red-600 text-white p-5 rounded-xl shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-between group">
+                        <div class="text-left">
+                            <div class="font-bold text-lg">複習需加強題目</div>
+                            <div class="text-red-100 text-xs">針對錯題庫進行特訓</div>
+                        </div>
+                        <div class="bg-white/20 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                        </div>
+                    </button>
+
+                    <button onclick="app.startQuiz('all')" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-5 rounded-xl shadow-lg shadow-slate-200 active:scale-95 transition-all flex items-center justify-between">
+                        <div class="text-left">
+                            <div class="font-bold text-lg">開始隨機測驗</div>
+                            <div class="text-slate-400 text-xs">全範圍隨機抽問</div>
+                        </div>
+                        <div class="bg-white/10 p-2 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. QUIZ SCREEN -->
+            <div id="screen-quiz" class="hidden flex-grow flex flex-col p-6 fade-in pb-32">
+                <!-- Top Info -->
+                <div class="flex justify-between items-end mb-4 border-b border-slate-100 pb-4">
+                    <span class="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-400 uppercase tracking-wide">Question</span>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-emerald-600 leading-none">
+                            <span id="q-current">1</span><span class="text-sm text-slate-300">/<span id="q-total">10</span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Question -->
+                <div class="mb-6">
+                    <h2 class="text-xs font-bold text-slate-400 mb-1 uppercase">Common Name</h2>
+                    <div id="q-text" class="text-3xl font-bold text-slate-800 leading-tight"></div>
+                    <div id="q-cn" class="text-lg text-slate-500 mt-1 font-medium"></div>
+                </div>
+
+                <!-- Input -->
+                <div class="relative mb-6">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Latin Name</label>
+                    <input type="text" id="answer-input" 
+                           class="latin-input w-full p-4 text-lg border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all placeholder-slate-300 text-slate-800"
+                           placeholder="Type here..." 
+                           autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <div id="input-icon" class="absolute right-4 top-10 hidden"></div>
+                </div>
+
+                <!-- Feedback & Details Box -->
+                <div id="feedback-box" class="hidden mb-6 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden fade-in">
+                    
+                    <!-- Result Header -->
+                    <div id="fb-header" class="p-4 border-b border-slate-100 bg-slate-50">
+                        <div id="fb-correct" class="hidden">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg class="text-emerald-500 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                <span class="text-sm font-bold text-emerald-600 uppercase">回答正確</span>
+                            </div>
+                            <p id="fb-correct-text" class="text-lg font-bold text-slate-800 font-mono"></p>
+                        </div>
+                        
+                        <div id="fb-wrong" class="hidden">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg class="text-red-500 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <span class="text-sm font-bold text-red-500 uppercase">正確答案</span>
+                            </div>
+                            <p id="fb-wrong-correct-text" class="text-lg font-bold text-slate-800 font-mono mb-2"></p>
+                            <p class="text-xs text-slate-400 uppercase">您的回答</p>
+                            <p id="fb-user-text" class="text-sm text-red-400 font-mono line-through"></p>
+                        </div>
+                    </div>
+
+                    <!-- Details Body -->
+                    <div class="p-5 space-y-5 bg-white">
+                        
+                        <!-- Family (New) -->
+                        <div class="pb-4 border-b border-slate-50">
+                            <h3 class="text-xs font-bold text-emerald-600 uppercase mb-1 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                植物科屬
+                            </h3>
+                            <p id="fb-family" class="text-base font-bold text-slate-800"></p>
+                        </div>
+
+                        <!-- Chemistry -->
+                        <div>
+                            <h3 class="text-xs font-bold text-indigo-500 uppercase mb-1 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                                主要化學成份
+                            </h3>
+                            <p id="fb-chem" class="text-sm text-slate-600 leading-relaxed"></p>
+                        </div>
+
+                        <!-- Properties -->
+                        <div>
+                            <h3 class="text-xs font-bold text-blue-500 uppercase mb-1 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                治療功效
+                            </h3>
+                            <p id="fb-prop" class="text-sm text-slate-600 leading-relaxed whitespace-pre-line"></p>
+                        </div>
+
+                        <!-- Contraindications -->
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-100">
+                            <h3 class="text-xs font-bold text-red-600 uppercase mb-1 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                使用禁忌
+                            </h3>
+                            <p id="fb-contra" class="text-sm text-red-800 leading-relaxed whitespace-pre-line"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fixed Bottom Actions -->
+                <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 max-w-2xl mx-auto z-10">
+                    <button id="btn-submit" onclick="app.checkAnswer()" class="w-full bg-slate-800 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform">提交答案</button>
+                    <button id="btn-next" onclick="app.nextQuestion()" class="hidden w-full bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        下一題 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. RESULT SCREEN -->
+            <div id="screen-result" class="hidden flex-grow flex flex-col p-6 text-center fade-in">
+                <div class="mt-10 mb-6">
+                    <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <h2 class="text-3xl font-bold text-slate-800">測驗完成</h2>
+                    <p class="text-slate-500 mt-2">本次測驗結果</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <div class="text-3xl font-bold text-emerald-600" id="res-score">0</div>
+                        <div class="text-xs text-emerald-800 font-bold uppercase">本次答對</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div class="text-3xl font-bold text-slate-600" id="res-total">0</div>
+                        <div class="text-xs text-slate-500 font-bold uppercase">本次題數</div>
+                    </div>
+                </div>
+
+                <div id="res-msg-box" class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-8 text-left hidden">
+                    <p class="text-sm text-blue-800 font-bold mb-1">💡 學習進度更新</p>
+                    <p class="text-xs text-blue-600" id="res-msg-text"></p>
+                </div>
+
+                <button onclick="app.goHome()" class="mt-auto w-full bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform">
+                    返回主選單
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 0. 安全儲存機制 ---
+        const SafeStorage = {
+            _memory: {},
+            _isAvailable: false,
+            init() {
+                try {
+                    const test = '__storage_test__';
+                    window.localStorage.setItem(test, test);
+                    window.localStorage.removeItem(test);
+                    this._isAvailable = true;
+                } catch (e) {
+                    this._isAvailable = false;
+                    document.getElementById('storage-warning').classList.remove('hidden');
+                }
+            },
+            getItem(key) { return this._isAvailable ? window.localStorage.getItem(key) : (this._memory[key] || null); },
+            setItem(key, value) { this._isAvailable ? window.localStorage.setItem(key, value) : (this._memory[key] = value); },
+            clear() { this._isAvailable ? window.localStorage.clear() : (this._memory = {}); }
+        };
+
+        // --- 1. 資料庫 (完整版) ---
+        const DB = [
+            { 
+                en: "Lemon-scented Eucalyptus", cn: "檸檬尤加利", answers: ["Eucalyptus citriodora", "Corymbia citriodora"], family: "桃金孃科", 
+                chem: "醛類: 香茅醛 (Citronellal) <77%\n單萜醇類: 香茅醇 (Citronallol) 3.5%",
+                prop: "- 止痛\n-肌肉關節僵硬; 修復韌帶\n- 消炎\n- 驅蟲\n- 抗真菌",
+                contra: "容易致敏(皮膚)"
+            },
+            { 
+                en: "Eucalyptus Blue Gum", cn: "藍膠尤加利", answers: ["Eucalyptus globulus"], family: "桃金孃科", 
+                chem: "氧化物類: 1,8 按油醇 (1,8 cineole) 75%\n單萜烯類: α松烯 (α-pinene) 10%\n酮類: 松香芹酮 (pinocarvone) 0.3%",
+                prop: "-強效抗菌\n-對呼吸系統疾病有效\n-袪痰溶黏",
+                contra: "-不適用於幼兒, 過量吸入會引致呼吸停頓\n-容易引起皮膚刺激\n- 對肝臟有神輕微毒性, 避免長期及大量使用\n-有神經毒性, 會引起癲癎, 不適宜6歲以下幼使用\n-影響藥物代謝, 不能口服"
+            },
+            { 
+                en: "Eucalyptus Radiata", cn: "澳洲尤加利", answers: ["Eucalyptus Radiata"], family: "桃金孃科", 
+                chem: "氧化物類: 1,8 按油醇 (1,8 cineole) 68%\n單萜烯類: 檸檬烯 (Limonene) 5%, α松烯 (α-pinene) 3%",
+                prop: "-作用於皮膚消炎及呼吸系統\n-改善子宮內膜異位症, 及細菌感染而造成的陰道炎",
+                contra: "-容易引起皮膚刺激\n- 對肝臟有神輕微毒性, 避免長期及大量使用\n-有神經毒性, 會引起癲癎, 不適宜6歲以下幼使用\n-影響藥物代謝, 不能口服"
+            },
+            { 
+                en: "Chamomile German", cn: "德國洋金菊", answers: ["Matricaria recutita"], family: "菊科", 
+                chem: "倍半萜烯: 母菊天藍烴 (Chamazulene) 46%\n倍半萜醇: 紅沒藥醇 (α-bisabolol) 2-67%\n氧化物: 紅沒藥醇氧化物 (bisabolol oxide) 0-55%",
+                prop: "-抑制過敏反應\n-止痙攣\n-強效消炎及抗過敏劑\n-經前綜合症\n-修復肌膚, 治療潰瘍",
+                contra: "-有通經特性, 懷孕初期慎用"
+            },
+            { 
+                en: "Chamomile Roman", cn: "羅馬洋金菊", answers: ["Anthemis nobilis", "Chamaemelum nobile"], family: "菊科", 
+                chem: "酯類: 歐白芷酸異丁酯 (Isobutly angelate) 35%, 歐白芷酸異戍酯(Butly angelate) 20%",
+                prop: "-抑鬱, 情緒鎮靜\n- 鎮痛: 偏頭痛, 牙痛及經痛\n-失眠\n-撫平神經系統\n-停經(非懷孕及更年期) / 經痛(止經痛)",
+                contra: "-有通經特性, 懷孕初期慎用 \n(非常溫和, 適合嬰兒及小孩使用)"
+            },
+            { 
+                en: "Clary Sage", cn: "快樂鼠尾草", answers: ["Salvia sclarea"], family: "唇形花科", 
+                chem: "酯類: 乙酸沉香酯 (Linalyl acetate) 64%\n醇類: 沉香醇 (Linalool) 15%\n雙萜醇: 硬尾醇 (Sclareol) 1%",
+                prop: "-降血壓, 抗膽固醇\n-靜脈曲張\n-收縮子宮\n-撫平神經系統\n-平衡荷爾蒙分泌: 經痛, 調經, 更年期",
+                contra: "-一般不使用於荷爾蒙相關的癌症患者\n-乳腺病患者, 癌症病人禁用\n-會誘發宿醉, 使用前後避免飲酒\n-有通經特性, 懷孕全期慎用"
+            },
+            { 
+                en: "Yarrow", cn: "西洋蓍草", answers: ["Achillea millefolium"], family: "菊科", 
+                chem: "倍半萜烯 (45%): 母菊天藍烴 (Chamazulene) 10%; Beta-石竹烯 (beta-caryophyllene) 10%\n酮類: 樟腦 (Camphor) 10-20%",
+                prop: "-所有肌腱炎症: 類風濕性關節炎\n-高血壓, 血栓, 靜脈曲張\n-皮膚傷口相關 (修復肌膚, 治療潰瘍)\n-閉經(非更年期, 非懷孕), 痛經",
+                contra: "-嬰幼兒, 懷孕, 癲癎症慎用"
+            },
+            { 
+                en: "Lemongrass", cn: "檸檬草 / 檸檬香茅", answers: ["Cymbopogon flexuosus", "Cymbopogon citratus"], family: "禾本科", 
+                chem: "醛類: 牻牛兒醛 (Geranial) 46%, 橙花醛 (Neral) 35% \n(檸檬醛 citral =橙花醛+牻牛兒醛)",
+                prop: "-改善循環, 暗瘡\n-遏止發炎止痛",
+                contra: "-口服(青光眼)\n-所有滲透身體徑: 前列線增生, 過敏, 患病或受損皮膚, 2歲以下兒童\n-使用劑量過高(需稀釋1%以下使用), 會引起皮膚刺激, 誘發過度敏感反應"
+            },
+            { 
+                en: "Citronella", cn: "香茅", answers: ["Cymbopogon nardus"], family: "禾本科", 
+                chem: "醇類: 牻牛兒醇 (geraniol) 55%\n醛類: 牻牛兒醛 (geranial) 7%, 香茅醛 (citronellal) 6%\n酯類: 乙酸牻牛兒酯 (geranyl acetate) 2%",
+                prop: "-驅蟲, 驅蚊\n-止痛: 頭痛\n-香港腳\n-肌肉疲勞",
+                contra: "-無毒性, 輕微過敏性, 常引致敏感\n(香茅精油引起過敏性濕疹)"
+            },
+            { 
+                en: "Palmarosa", cn: "玫瑰草 / 馬丁香茅", answers: ["Cymbopogon martinii"], family: "禾本科", 
+                chem: "醇類: 天竺葵醇 (geraniol) 72%\n酯類: 乙酸牻牛兒酯 (geranyl acetate) 16%",
+                prop: "-癬\n-皮膚感染 (遏止發炎)\n-抗菌, 抗細菌, 抗病毒\n-保濕, 促進肌膚細胞再生",
+                contra: "N/A  (上面使用不超過1%)"
+            },
+            { 
+                en: "Vetiver", cn: "岩蘭草", answers: ["Vetiveria zizanioides", "Vetiveria zizanoides"], family: "禾本科", 
+                chem: "醇類: 岩蘭醇 (Veriverol) 30%, 客烯醇 (khusimol) 15%, 異株欒倍半萜 (Isovalencenol) 8%",
+                prop: "-風濕痛症\n-活化靜脈(靜脈曲張)及淋巴循環\n-安撫情緒, 失眠\n-改善循環, 遏止發炎止痛",
+                contra: "-孕婦及嬰兒慎用"
+            },
+            { 
+                en: "Bergamot", cn: "佛手柑", answers: ["Citrus bergamia"], family: "芸香科", 
+                chem: "單萜烯類: 檸檬烯 (limonene) 40%\n醇類: 沉香醇 (linalool) 12%\n酯類: 乙酸沉香酯 (linalyl acetate) 26%\n內酯: 佛手柑內酯 (Bergapten) 0.33% [呋喃香豆素-具光敏性]",
+                prop: "-抗抑鬱及提升情緒\n-改善壓力問題\n-調節食慾, 可以有助改善厭食症及暴食症\n-殺菌 (唇皰疹, 尿道炎, 生殖器皰疹)",
+                contra: "-有光敏性/光毒性, 使用前後不要進行日光浴 (12小時內不要暴露皮膚於紫外光下)\n-IFRA建議用量0.4%"
+            },
+            { 
+                en: "Grapefruit", cn: "西柚", answers: ["Citrus paradisi"], family: "芸香科", 
+                chem: "單萜烯類: 檸檬烯 (limonene) 94%\n內酯: 佛手柑內酯 (Bergapten) 0.02% [呋喃香豆素]",
+                prop: "-肌肉疲勞及僵硬, 抑鬱, 頭痛, 壓力 [吸聞]\n-水腫, 橙皮脂肪, 癡肥; 分解脂肪, 幫助減肥瘦身 [按摩]\n-痤瘡, 粉刺及油性皮膚, 使皮膚回復光澤\n-化解肝膽結石, 調理肝功能失調, 促進膽汁分泌\n-排毒, 傷風感冒",
+                contra: "-有光敏性/光毒性, 使用前後不要進行日光浴 (12小時內不要暴露皮膚於紫外光下)\n-IFRA建議最終產品中使用最多4%"
+            },
+            { 
+                en: "Lemon", cn: "檸檬", answers: ["Citrus limon"], family: "芸香科", 
+                chem: "單萜烯類: 檸檬烯 (limonene) 70%, β-松烯 (β-pinene) 10%\n內酯: 佛手柑內酯 (Bergapten) <0.02% [呋喃香豆素]",
+                prop: "-抗菌\n-減輕病人焦慮 [噴霧, 吸聞]\n-改善腦退化症 (集中注意力, 有助思考)",
+                contra: "-含呋喃香豆素, 有光敏性, 12小時內不要暴露皮膚於紫外光下\n-IFRA建議最終產品中只可使用最多2%"
+            },
+            { 
+                en: "Mandarin", cn: "蜜柑", answers: ["Citrus reticulata"], family: "芸香科", 
+                chem: "單萜烯類: 檸檬烯 (limonene) 70%, γ-松油烯 (γ-terpinene) 19%",
+                prop: "-非常溫和、安全性高, 適合老人、小童和懷孕婦女使用\n-抑鬱及失眠\n-妊娠紋\n-腸胃氣脹",
+                contra: "N/A"
+            },
+            { 
+                en: "Orange Bitter", cn: "苦橙", answers: ["Citrus aurantium var. amara"], family: "芸香科", 
+                chem: "單萜烯類: 檸檬烯 (limonene) 95%\n內酯: 佛手柑內酯 (Bergapten) 0.03% [呋喃香豆素]",
+                prop: "-抑鬱及失眠\n-分解脂肪, 瘦身\n-集中注意力, 有助思考\n-抗紅腫發炎\n- 化解肝膽結石, 調理肝功能失調, 促進膽汁分泌",
+                contra: "-含呋喃香豆素, 有光敏性, 12小時內不要暴露皮膚於紫外光下\n-IFRA建議產品內最大使用用量為1.4%"
+            },
+            { 
+                en: "Orange Sweet", cn: "甜橙", answers: ["Citrus aurantium var sinensis"], family: "芸香科", 
+                chem: "單萜烯類: 檸檬烯 (limonene) 95%",
+                prop: "-抗抑鬱, 提振情緒, 提神\n-分解脂肪, 瘦身\n-水腫, 橙皮脂肪\n- 化解肝膽結石, 調理肝功能失調, 促進膽汁分泌\n-便秘, 消化不良",
+                contra: "-右旋檸檬烯, 氧化後會變成百里酚或香荊芥酚, 具有皮膚刺激性 (使皮膚發紅、發癢及發熱)\n-應避免柑橘類精油存放過久"
+            },
+            { 
+                en: "Neroli", cn: "橙花", answers: ["Citrus aurantium var. amara"], family: "芸香科", 
+                chem: "醇類: 沉香醇 (linalool) 38%, 橙花醇 (Nerol) 0.9%, 牻牛兒醇 (geraniol) 2.3%\n單萜烯類: 檸檬烯 (limonene) 17%",
+                prop: "-抗抑鬱, 焦慮, 助眠, 促進性慾\n-治痙攣\n-預防妊娠紋, 產後抑鬱\n-經前綜合症及更年期\n-循環不佳, 靜脈曲張\n-促進皮膚細胞更新: 疤痕, 收斂毛孔",
+                contra: "-高比例單萜烯類會引致皮膚過敏, 尤其在黏膜表面上"
+            },
+            { 
+                en: "Petitgrain", cn: "苦橙葉", answers: ["Citrus aurantium var. amara"], family: "芸香科", 
+                chem: "醇類: 沉香醇 (linalool) 22%\n酯類: 乙酸沉香酯 (linalyl acetate) 50%",
+                prop: "-情緒: 抗抑鬱, 失眠, 心悸, 眩暈, 憂慮\n-皮膚: 暗瘡, 減低油脂分泌, 青春痘, 痤瘡, 油性皮膚, 油性頭皮屑\n-抗紅腫發炎, 殺菌, 收斂劑, 驅風, 殺真菌, 鎮靜, 健胃, 滋補\n-消化不良",
+                contra: "N/A \n沒有危險性"
+            },
+            { 
+                en: "True Lavender", cn: "窄葉/真正薰衣草", answers: ["Lavandula angustifolia", "Lavandula officinalis"], family: "唇型花科", 
+                chem: "醇類: 沉香醇 (linalool) 32-42%\n酯類: 乙酸沉香酯 (linalyl acetate) 40-52%",
+                prop: "-哮喘, 支氣管炎, 黏膜炎\n-經痛及減少白帶, 經前綜合症及更年期\n-過敏症, 香港腳, 燒傷\n-濕疹, 發炎\n-促進傷口癒合",
+                contra: "-降血壓, 低血壓患者慎用\n-有通經特性, 懷孕初期慎用"
+            },
+            { 
+                en: "Spike Lavender", cn: "穗花薰衣草", answers: ["Lavandula latifolia"], family: "唇型花科", 
+                chem: "氧化物類: 1,8桉油醇 (1,8 cineole) 27%\n醇類: 沉香醇 (linalool) 40%\n單萜酮: 樟腦 (camphor) 10-11%",
+                prop: "-抗真菌\n-幫助傷口癒合\n-呼吸道感染, 黏膜炎\n-偏頭痛, 神經痛\n-蚊叮蟲咬\n-袪痰, 消除黏液",
+                contra: "-懷孕, 癲癎症及發燒\n-含單萜酮類, 會引致神經中毒, 嬰幼兒避免使用"
+            },
+            { 
+                en: "Lavandin", cn: "醒目薰衣草", answers: ["Lavandula hybrida", "Lavandula burnatii", "Lavandula x intermedia"], family: "唇型花科", 
+                chem: "醇類: 沉香醇 (linalool) 30-50%\n酯類: 乙酸沉香酯 (linalyl acetate) 15-50%\n單萜酮: 樟腦 (camphor) 5-15%\n氧化物類: 1,8桉油醇 (1,8 cineole) 5-25%",
+                prop: "-止痛, 殺菌, 促進傷口結痂\n-疼痛及肌肉僵硬\n-傷風及咳嗽\n-含有醇類及氧化物, 可以處理各種呼吸系統問題, 黏膜炎等",
+                contra: "-懷孕, 癲癎症及發燒\n-含單萜酮類, 會引致神經中毒, 嬰幼兒避免使用"
+            },
+            { 
+                en: "Hyssop", cn: "牛膝草", answers: ["Hyssopus officinalis"], family: "唇型花科", 
+                chem: "酮類: 異松樟酮 (Iso-Pinocamphone) 40%\n*危險芳香分子, 可誘發癲癇及神經毒性",
+                prop: "-袪痰, 支氣管炎, 黏膜炎, 咳嗽 [溶解黏液, 改善氣管阻塞, 久咳不癒]\n-舒緩哮喘\n-平衡血壓\n-用於焦慮, 疲倦, 神經緊張及壓力有關的身體情況\n-強力抗病毒(流感, HIV)、細菌(肺炎鏈球菌、金黃葡萄球菌)",
+                contra: "-患有癲癎症, 發燒, 懷孕婦女及6歲以下的小童不宜使用\n-牛膝草含有毒性 (神經毒性), 必須謹慎使用 "
+            },
+            { 
+                en: "Mountain Hyssop", cn: "高地牛膝草", answers: ["Hyssopus decumbens"], family: "唇型花科", 
+                chem: "氧化物類: 1,8桉油醇 (1,8 cineole) 50%\n單萜烯類: β-松烯 (β-pinene) 25%\n酮類: 異松樟酮 (Iso-Pinocamphone) 3%",
+                prop: "-強大抗病毒能力\n-耳鼻喉或呼吸道感染\n-鼻竇炎、支氣管炎、嬰兒的細支氣管炎\n-化解黏液, 排痰",
+                contra: "N/A\n非常溫和, 嬰兒及體弱人士可以低比例使用"
+            },
+            { 
+                en: "Cinnamon Leaf", cn: "肉桂葉", answers: ["Cinnamomum zeylanicum", "Cinnamomum verum"], family: "樟科", 
+                chem: "酚類: 丁香酚 (Eugenol) 74%",
+                prop: "-循環系統不佳\n-分娩(刺激收縮)、性量感、白帶、經量少\n-風濕病\n-感冒、流行性感冒、風寒和傳染病\n-蝨, 疥瘡, 牙齒/牙床保健, 疣, 蜂螫\n-厭食症, 結腸炎, 腹瀉, 消化不良, 腸道感染, 消化遲鈍\n-神經疲乏及與壓力有關的情況\n-止痛, 麻醉, 抗菌, 抗感染",
+                contra: "-如有服用抗凝血藥物需注意使用\n-在黏膜上不可使用超越3%\n-孕婦忌用\n-酗酒、血友病、腎病及前列腺癌"
+            },
+            { 
+                en: "Cinnamon Bark", cn: "錫蘭肉桂皮", answers: ["Cinnamomum verum", "Cinnamomum zeylanicum"], family: "樟科", 
+                chem: "醛類: 肉桂醛 (Cinnamaldehyde) 68%",
+                prop: "-抗糖尿病\n-強化子宮收縮, 幫助生產\n-提振男性性功能\n-激勵消化系統, 同時可以應用於便秘及腹瀉\n-強效抗菌, 殺菌 (不論是細菌病毒或真菌)",
+                contra: "-具有肝毒性, 一般建議劑量在1%以下\n-含高比例肉桂醛會刺激皮膚, 在黏膜上不可使用超越1%\n-酗酒、血友病、腎病及前列腺癌\n-孕婦忌用\n-5歲以下小孩忌用"
+            },
+            { 
+                en: "Clove Bud", cn: "丁香花苞", answers: ["Eugenia caryophyllata"], family: "桃金孃科", 
+                chem: "酚類: 丁香酚 (Eugenol) 80%\n酯類: 乙酸丁香酯 (Eugenyl acetate) 10%",
+                prop: "-止痛, 牙痛\n-壓力, 失憶, 精神疲勞, 疲倦\n-關節炎, 風濕性關節炎, 扭傷\n-香港腳\n-胃氣脹, 腸胃痙攣\n-甲狀腺失調\n[牙醫-止痛,消炎,殺菌]",
+                contra: "-不可使用在過敏性、患病或受損的皮膚上\n-2歲以下兒童, 孕婦忌用\n-不能與抗凝血藥物同時使用\n-酗酒、血友病、腎病及前列腺癌\n-在黏膜上不可使用超越1%"
+            },
+            { 
+                en: "May Chang / Litsea", cn: "山雞椒", answers: ["Litsea cubeba"], family: "樟科", 
+                chem: "醛類: 檸檬醛 (Citral) 80%\n單萜烯類: 檸檬烯 (Limonene) 13%",
+                prop: "-心臟滋補\n-痤瘡, 皮膚炎, 止汗除臭, 油膩皮膚, 丘疹\n-驅蟲\n-腸胃氣脹, 消化不良\n-抗菌及抗真菌",
+                contra: "-口服-青光眼\n-所有滲透身體途徑: 前列腺增生\n-不可使用在過敏性、患病或受損的皮膚上\n-2歲以下兒童忌用"
+            },
+            { 
+                en: "Cistus / Rock rose", cn: "岩玫瑰", answers: ["Cistus ladanifer"], family: "半日花科", 
+                chem: "單萜烯類: α-蒎烯 (α-pinene) 38%, 莰烯 (camphene) 5.5%",
+                prop: "-傷口處理, 強效止血, 促進傷口癒合, 蟹足腫\n-抗病毒\n-安撫驚恐情緒\n-提升免疫力",
+                contra: "N/A"
+            },
+            { 
+                en: "Tea Tree", cn: "茶樹", answers: ["Melaleuca alternifolia"], family: "桃金孃科", 
+                chem: "醇類: 萜品烯四醇 (terpinen-4-ol) 40%\n氧化物類: 1,8桉樹腦 (1,8 cineole) 2.3%\n單萜烯類: 松油烯 (terpinene) 10%",
+                prop: "-抗菌、抗真菌、抗病毒 [抗感染]\n-增強免疫性 [免疫力]\n-促進皮膚再生 [平衡肌膚菌種]",
+                contra: "-過量使用會使皮膚過敏"
+            },
+            { 
+                en: "Frankincense", cn: "乳香", answers: ["Boswellia carteri", "Boswellia carterii"], family: "橄欖科", 
+                chem: "單萜烯類: α-蒎烯 (α-pinene) 31%, 檸檬烯 (Limonene) 9%",
+                prop: "-幫助放鬆, 調節荷爾蒙\n-膀胱炎\n-美白抗皺, 潰瘍\n-促進血液循環, 幫助傷口癒合\n-經痛, 白帶, 子宮出血\n-哮喘, 支氣管炎, 咳嗽及聲帶發炎",
+                contra: "N/A"
+            },
+            { 
+                en: "Myrrh", cn: "沒藥", answers: ["Commiphora myrrha"], family: "橄欖科", 
+                chem: "倍半萜烯類: 呋喃按-1, 3-二烯 (Furanoeudesma-1, 3-diene) 34%",
+                prop: "-關節炎\n-甲狀腺機能亢進\n-香港腳, 粗糙及乾燥皮膚, 濕疹, 傷口及抗衰老\n-牙肉感染, 牙齦炎, 口腔潰瘍, 喉嚨疼痛及失聲\n-消化不良, 食慾不振, 胃腸氣\n-鵝口瘡, 褥瘡\n-白帶, 無月經",
+                contra: "-高分量可能帶有毒性, 在懷孕期不可使用"
+            },
+            { 
+                en: "Palo Santo", cn: "秘魯聖木", answers: ["Bursera graveolens"], family: "橄欖科", 
+                chem: "單萜烯類: 檸檬烯 (Limonene) 70%\n醚類: 薄荷呋喃 (Menthofuran) 0.5-14.5%\n單萜醇: α-萜烯醇 (α-terpineol) 10%",
+                prop: "-舒緩各種疼痛、肌肉酸痛 (肌肉筋骨酸痛)\n-強效消炎, 抗菌、抗病毒\n-抗痙攣\n-呼吸道感染\n-舒緩流行性感冒和增強免疫力",
+                contra: "-含有薄荷呋喃, 有強烈肝毒性, 需小心使用"
+            },
+            { 
+                en: "Geranium Bourbon", cn: "波旁天竺葵", answers: ["Pelargonium graveolens"], family: "牻牛兒科", 
+                chem: "醇類: 香茅醇 (Citronellol) 32%, 牻牛兒醇 (Geraniol) 16%\n氧化物類: 玫瑰氧化物 (rose oxide) 1.2%",
+                prop: "-抗抑鬱, 殺菌, 收斂劑\n-水腫, 血液循環不佳, 蜂窩組織, 靜脈曲張\n-止血\n-平衡油脂分泌, 痤瘡, 微血管破裂, 燒傷, 帶狀皰疹及疤痕護理\n-肝臟胰臟功能不足, 黃疸病, 腹瀉, 糖尿病\n-調節荷爾蒙, 更年期症狀, 月經痛楚, 經痛\n-扁桃線炎\n-預防褥瘡, 痔瘡",
+                contra: "-有通經特性, 懷孕婦女慎用"
+            },
+            { 
+                en: "Rose Otto", cn: "玫瑰奧圖", answers: ["Rosa Damascena"], family: "薔薇科", 
+                chem: "醇類: 香茅醇 (Citronellol) 32%, 牻牛兒醇 (Geraniol) 16%, 橙花醇 (nerol) 9%\n玫瑰蠟 15-24%",
+                prop: "-頭痛, 神經系統緊張\n-陽萎, 性冷感\n-血液循環不佳及心悸\n-慢性支氣管炎, 哮喘, 肺結核\n-濕疹, 皰疹, 微絲血管破裂 [刺激細胞再生及調節皮脂的生產]\n-肝臟出血, 膀胱炎, 嘔心\n-不規律月經, 白帶; 平衡生殖系統",
+                contra: "-懷孕初期避免使用"
+            },
+            { 
+                en: "Rose Absolute", cn: "玫瑰原精", answers: ["Rosa Damascena"], family: "薔薇科", 
+                chem: "醇類: 笨乙醇 (phenylethyl alcohol) 73%, 香茅醇 (Citronellol) 11%, 牻牛兒醇 (Geraniol) 7%",
+                prop: "-促進皮膚細胞修護\n-提升免疫力\n-抗菌,抗病毒",
+                contra: "-懷孕初期避免使用"
+            },
+            { 
+                en: "Immortelle", cn: "永久花 / 蠟菊", answers: ["Helichrysum italicum", "Helichrysum angustifolia"], family: "菊科", 
+                chem: "單萜烯類: α-蒎烯 (α-pinene) 21%\n酮類: 意大利酮 (Italidione) 4%",
+                prop: "-疼痛, 頭痛, 偏頭痛\n-美白, 細胞再生, 疤痕, 皮膚炎, 瘡, 潰瘍 [促進細胞再生與組織修複]\n-肝/脾充血腫脹, 調整胰腺與膽汁分泌正常\n-活血化瘀, 促進傷口癒合 [散瘀, 疏通血管及擴張血管]",
+                contra: "N/A"
+            },
+            { 
+                en: "Tropical Basil", cn: "熱帶羅勒 (Methyl-Chavicol)", answers: ["Ocimum basilicum ct. Methyl-Chavicol", "Ocimum basilicum"], family: "唇形花科", 
+                chem: "醚類: 甲基醚蔞葉酚 (Menthyl chavicol / estragole) 80%",
+                prop: "-抗腸胃痙攣和抽筋, 消炎止痛\n-經痛, 頭痛, 消除脹氣, 解充血",
+                contra: "-避免使用高劑量methyl chavicol 的熱帶羅勒, 因為可能會致癌, 最多使用2%\n-癌症患者、孕婦、小孩及嬰兒避免使用"
+            },
+            { 
+                en: "Sweet Basil", cn: "甜羅勒 (linalool)", answers: ["Ocimum Basilicum ct. linalool", "Ocimum Basilicum"], family: "唇形花科", 
+                chem: "醇類: 沉香醇 (Linalool) 43%\n醚類: 甲基醚蔞葉酚 (Menthyl chavicol / estragole) 17%",
+                prop: "-清除身心不安, 情緒低落, 癲癎症及偏頭痛\n-肌肉疼痛及痛楚\n-消化不良, 腸胃脹氣, 嘔心\n-肺氣腫, 打膈, 恢復嗅覺, 百日咳, 鼻竇炎\n-潔淨腎臟, 預防前列腺疾病, 膀胱炎\n-殺菌, 減低尿酸\n-痛風, 調節心跳, 眩暈",
+                contra: "-癌症患者、孕婦、小孩及嬰兒避免使用"
+            },
+            { 
+                en: "Peppermint", cn: "胡椒薄荷", answers: ["Mentha piperita"], family: "唇形花科", 
+                chem: "醇類: 薄荷醇 (Menthol) 32%\n酮類: 薄荷酮 (Menthone) 25%",
+                prop: "-昏厥, 頭痛, 精神疲乏, 神經壓力, 眩暈\n-肌肉痛楚, 神經痛\n-痤瘡, 皮膚炎, 環癬, 牙痛\n-調節月經",
+                contra: "-所有滲透身體途徑: 心臟纖維顫動\n-癲癎症避免使用\n-發燒症避免使用\n-缺鐵性貧血患者慎用\n-不建議成人在24小時內的劑量超過1毫升\n-在黏膜上使用不可超越3%濃度\n-不可使用在孕婦、嬰兒及6歲以下兒童\n-幼兒過量吸聞可能會導致呼吸停頓"
+            },
+            { 
+                en: "Spearmint", cn: "綠薄荷", answers: ["Mentha spicata"], family: "唇形花科", 
+                chem: "酮類: 香芹酮 (Carvone) 58%",
+                prop: "-抑鬱, 頭痛, 偏頭痛, 疲勞, 壓力\n-傷口癒合\n-鼻黏膜炎, 鼻竇炎, 發燒, 支氣管炎\n-胃腸氣, 消化不良, 嘔吐, 膽汁, 胃部不適",
+                contra: "-不可使用在孕婦、嬰兒及6歲以下兒童\n-皮膚上使用不應超過1.7% (Tisserand)"
+            },
+            { 
+                en: "Orange mint", cn: "佛手柑薄荷", answers: ["Mentha citrata"], family: "唇形花科", 
+                chem: "醇類: 沉香醇 (Linalool) 44%\n酯類: 乙酸沉香酯 (Linalyl acetate) 35%",
+                prop: "- 滋補, 治痙攣, 平衡, 殺菌/細菌\n-神經疲竭\n-心臟調節\n-刺激分泌, 胃,肝臟,胰臟\n-促進排卵, 滋補男性生殖系統\n-膀胱炎",
+                contra: "N/A"
+            },
+            { 
+                en: "Rosemary", cn: "迷迭香 (ct. 1,8 cineole)", answers: ["Rosmarinus officinalis ct. 1,8 cineole", "Salvia rosmarinus"], family: "唇形花科", 
+                chem: "氧化物: 1,8桉樹腦 (1,8 cineole) 40%\n單萜烯類: 松烯 (Pinene) 14%\n酮類: 樟腦 (Camphor) 13%",
+                prop: "-虛弱、頭痛、適合低血壓患者、神經痛、精神疲勞、神經疲乏、增強記憶力及壓力方面有關疾病\n-肌肉痛楚、風濕病\n-血液循不佳及心悸、痛風、水腫、橙皮脂肪\n-痤瘡、皮膚炎、濕疹、油性皮膚、調節皮脂漏、疥癬、頭屑、促進頭髮生長\n-哮喘、支氣管炎\n-大腸炎、驅蟲劑、消化不良、腸胃脹氣、肝臟失調\n-經痛、白帶\n-傷風、流行性感冒",
+                contra: "-如果懷孕、患有癲癇症及發燒時, 不要口服\n-有通經特性, 懷孕婦女慎用\n-會提升血壓, 高血壓患者避免使用"
+            },
+            { 
+                en: "Rosemary", cn: "迷迭香 (ct. camphor)", answers: ["Rosmarinus officinalis ct. camphor"], family: "唇形花科", 
+                chem: "氧化物: 1,8桉樹腦 (1,8 cineole) 18%\n單萜烯類: 松烯 (Pinene) 22%\n酮類: 樟腦 (Camphor) 13-20%",
+                prop: "-發炎止痛、痕癢\n-肌肉疼痛、退化性關節炎\n-驅蟲、防蟲、防腐",
+                contra: "-癲癇或蠶豆症患者禁止使用\n-孕婦禁用, 會導致流產\n-嬰兒禁用, 其致死劑量為1g/KG, 高劑量使用會造成呼吸困難及昏迷"
+            },
+            { 
+                en: "Rosemary", cn: "迷迭香 (ct. verbenone)", answers: ["Rosmarinus officinalis ct. verbenone"], family: "唇形花科", 
+                chem: "單萜烯類: 松烯 (Pinene) 42%\n酮類: 樟腦 (Camphor) 5%, 馬鞭草酮 (Verbenone) 5%\n氧化物: 1,8桉樹腦 (1,8 cineole) 5%",
+                prop: "-養肝排毒\n-幫助肝臟解毒",
+                contra: "N/A"
+            },
+            { 
+                en: "Thyme Red", cn: "百里香 (ct. thymol)", answers: ["Thymus vulgaris ct. thymol"], family: "唇形花科", 
+                chem: "酚類: 百里酚 (thymol) 32-63%, 香荊芥酚 (Carvacrol) 23-44%",
+                prop: "-精神疲累及抑鬱\n-風濕病、肌肉及關節僵硬、坐骨神經痛、腰痛\n-痛風、皮下脂肪蜂窩組織\n-膿腫、痤瘡、虱、油性皮膚\n-哮喘、支氣管炎、黏膜炎、咳嗽、鼻竇炎\n-消化不良、腸胃脹氣\n-膀胱炎、尿道炎\n-激勵免疫系統、傷風、發燒、感冒",
+                contra: "-高血壓、過敏、皮膚病或損毀皮膚, 及兩歲以下兒童\n-在黏膜上不宜使用超過1%濃度\n-有通經特性, 孕婦慎用\n-會提升血壓, 高血壓者不宜使用"
+            },
+            { 
+                en: "Thyme Sweet", cn: "甜百里香 (ct. linalool)", answers: ["Thymus vulgaris ct. linalool"], family: "唇形花科", 
+                chem: "醇香類: 沉香醇 (linalool) 45%",
+                prop: "-疲勞、失眠\n-風濕病\n-牛皮癬、濕疹、疣\n-支氣管炎\n-膀胱炎\n-激勵免疫系統、傷風、發燒、感冒\n-溫和, 小孩可用",
+                contra: "N/A"
+            },
+            { 
+                en: "Pine", cn: "歐洲赤松", answers: ["Pinus sylvestris"], family: "松科", 
+                chem: "單萜烯類: 松烯/蒎烯 (Pinene) 66%",
+                prop: "-呼吸系統, 泌尿系統, 肌肉疼痛, 消炎, 殺菌及殺真菌\n-疲勞, 神經緊張及壓力\n-疲勞、全身乏力、長期疲累、神經疲乏及壓力-有關的症狀\n-關節炎、肌肉疼痛及痛楚、風濕、坐骨神經痛\n-循環不佳、痛風\n-割傷、頭蝨、過份排汗、疥癬、瘡\n-哮喘、支氣管炎、黏膜炎、鼻竇炎（一般耳鼻喉科疾病）\n-膀胱炎、泌尿感染\n-咳嗽、流行性感冒及傷風\n-盆骨充血、前列腺充血",
+                contra: "-使用濃度過高, 可能會引發皮膚過敏"
+            },
+            { 
+                en: "Cedarwood Atlas", cn: "大西洋雪松", answers: ["Cedrus atlantica"], family: "松科", 
+                chem: "倍半萜烯: 雪松烯 (Himachalene) 60%\n酮類: 大西洋酮 (Alantone) 4%",
+                prop: "-殺菌、收斂劑、利尿、化痰、驅蟲殺蟲、鎮靜\n-神經系統緊張及不安、鎮靜\n-關節炎及風濕病\n-消除水腫\n-傷口、痤瘡、皮膚炎、濕疹、真菌感染、油膩皮膚、脫髮及潰瘍、收斂皮膚\n-支氣管炎、呼吸不暢順及咳嗽\n-腎臟及膀胱失調、膀胱炎、白帶、陰道發炎\n-抗腫瘤，誘導癌細胞凋亡",
+                contra: "-懷孕期不能使用"
+            },
+            { 
+                en: "Balsam Fir", cn: "膠冷杉", answers: ["Abies balsamea"], family: "松科", 
+                chem: "單萜烯類: 松烯/蒎烯 (Pinene) 46%, 檸檬烯 (Limonene) 14%\n酯類: 乙酸龍腦酯 (Bornyl-acetate) 17%",
+                prop: "-消除粘液、化痰、止咳、支氣管炎和哮喘\n-各種呼吸系統的問題",
+                contra: "N/A"
+            },
+            { 
+                en: "Black Spruce", cn: "黑雲杉", answers: ["Picea mariana"], family: "松科", 
+                chem: "單萜烯類: 樟烯 (Camphene) 18%\n酯類: 乙酸龍腦酯 (Bornyl-acetate) 23%",
+                prop: "-消炎，關節炎\n-即時止痛\n-疲勞憂鬱\n-抗痙攣\n-抗菌抗感染",
+                contra: "N/A"
+            },
+            { 
+                en: "Sandalwood", cn: "檀香", answers: ["Santalum album"], family: "檀香科", 
+                chem: "醇類: 檀香醇 (Santalol) 69%\n倍半萜烯類: 檀香烯 (Santalene) 4%",
+                prop: "-抑鬱、失眠、神經系統緊張及壓力有關情況 \n-痤瘡、乾燥、粗造及裂變皮膚、痕癢、濕疹、油膩皮膚及潤膚\n-支氣管炎、黏膜炎、喉炎、咳嗽 \n-腹瀉、嘔心\n-膀胱炎\n-咳嗽及喉嚨疼痛\n-常用於冥想之用",
+                contra: "N/A"
+            },
+            { 
+                en: "Majoram Sweet", cn: "甜馬可蘭", answers: ["Origanum majorana"], family: "唇形花科", 
+                chem: "醇類: 萜品烯四醇 (Terpinen-4-ol) 21%\n單萜烯類: gamma-松油烯 (γ-Terpinene) 15.5%",
+                prop: "-頭痛失眠\n-肌肉痛\n-消化系統問題及呼吸系統問題\n-頭痛、失眠、偏頭痛、神經系統緊張及壓力有關情況\n-關節炎、腰痛、肌肉疼痛、肌肉僵硬、風濕病、扭傷\n-哮喘、支氣管炎\n-腹痛、便秘、消化不良、腸胃脹氣\n-經前緊張、白帶、經痛及無月經",
+                contra: "-具通經特性, 懷孕初期避免使用"
+            },
+            { 
+                en: "Spikenard", cn: "甘松香", answers: ["Nardostachys jatamansi"], family: "敗醬科", 
+                chem: "倍半萜烯: 白菖烯 (Calarene) 7%\n 酮類: 纈草酮 (Valeranone) 3%",
+                prop: "-失眠、偏頭痛、壓力及焦慮、憂慮、呼吸短促\n-過敏症、發炎、年長皮膚、紅疹。對皮膚層有支持作用，因為在類固醇治療後會使皮膚變為比較單薄。\n-腸道過敏\n-陰道的白色分泌物\n-一般傳統用在治療偏頭痛，壓力有關的精神緊張，使老化的皮膚回復光澤，幫助睡眠，醫治傷口，及有激勵的作用\n-用於莫名的頭痛及失眠\n-令人放下及寬恕",
+                contra: "N/A"
+            },
+            { 
+                en: "Valerian", cn: "纈草", answers: ["Valeriana officinalis"], family: "敗醬科", 
+                chem: "單萜烯類: 莰烯 (Camphene) 24%\n酯類: 乙酸龍腦酯 (bornyl-acetate) 32%",
+                prop: "-失眠、壓力\n-坐骨神經痛",
+                contra: "N/A"
+            },
+            { 
+                en: "Melissa", cn: "香蜂草", answers: ["Melissa officinalis"], family: "唇形花科", 
+                chem: "倍半萜烯: β-丁香油烴(石竹烯) (Beta-caryophyllene) 22%, 大根老鸛草烯 (Gernacrene D) 20%\n醛類: 檸檬醛 (Citral) 20%",
+                prop: "-歇斯底里、心悸、失眠、中央神經系統鎮靜作用、頭痛\n-高血壓、咽喉炎\n-胃抽筋、調節分泌物例如膽汁、胃、消化不良、嘔心、晨吐、肝臟呆滯\n-單純皰疹",
+                contra: "-口服 (青光眼)\n-所有滲透途徑: 前列線肥大 (細胞脹大)\n-過敏、患病或損毀皮膚, 及兩歲以下兒童"
+            },
+            { 
+                en: "Cypress", cn: "絲柏", answers: ["Cupressus sempervirens"], family: "柏科", 
+                chem: "單萜烯類: 松烯 (Pinene) 50%, δ-3-蒈烯 (delta-3-careen) 12%\n醇類: 雪松醇 (cedrol) 7%",
+                prop: "-有很強的收斂效果: 止血\n-處理靜脈循環問題: 靜脈曲張、痔瘡、淋巴功能引致的水腫問題\n-排水、水腫\n-治療多汗症\n-哮喘、支氣管炎、咳嗽\n-經痛、更年期、月經過多\n-改善油性皮膚及頭髮",
+                contra: "N/A"
+            },
+            { 
+                en: "Cedarwood Virginian", cn: "維吉尼亞雪松", answers: ["Juniperus virginiana"], family: "柏科", 
+                chem: "醇類: 雪松醇 (cedrol) 21%\n倍半萜烯類: 雪松烯 (Cedarene) 30%",
+                prop: "-神經系統緊張\n-慢性關節炎及風濕病\n-靜脈炎\n-痤瘡、頭皮屑、濕疹、潰瘍及油性皮膚\n-支氣管炎及對黏膜炎有乾枯效果\n-腎臟滋補及平復膀胱炎所帶來的灼痛感\n-白帶",
+                contra: "N/A"
+            },
+            { 
+                en: "Juniper berry", cn: "杜松果", answers: ["Juniperus communis"], family: "柏科", 
+                chem: "單萜烯類: 松烯 (Pinene) 33%, 檜烯 (sabinene) 17%, 月桂烯 (Myrcene) 14%",
+                prop: "-焦慮、神經系統緊張及壓力有關情況\n-風濕病、因毒素而引起的肌肉疼痛及痛楚\n-皮下脂肪蜂窩組織、毒素積聚\n-痤瘡、皮膚炎、濕疹、油膩肌膚\n-膀胱炎\n-無月經、經痛、白帶\n-傷風感冒及感染",
+                contra: "腎病患者避免使用"
+            },
+            { 
+                en: "Pink pepper", cn: "粉紅胡椒", answers: ["Schinus molle"], family: "漆樹科", 
+                chem: "單萜烯類: α-水芹烯 (alpha-phellandrene) 23%, 月桂烯 (Myrcene) 22%",
+                prop: "-利尿、風濕、止痛",
+                contra: "N/A"
+            },
+            { 
+                en: "Bay Laurel", cn: "月桂葉", answers: ["Laurus nobilis"], family: "Lauraceae 樟科", 
+                chem: "氧化物類: 1,8桉油醇 (1,8-cineole) 32%, 單萜醇類: 沉香醇(Linalool) 10%, 單萜烯類: 月桂烯 (Myrcene) 1.6%",
+                prop: "-平衡自主神經\n-改善淋巴循環, 改善動脈纖維化\n-有助自體免疫系統失調而引起的風濕及關節炎\n-消炎, 抗病毒\n-抗痙攣, 止痛\n-各種炎症: 呼吸系統疾病, 膀胱炎, 前列線炎\n-抑制脫髮, 促進頭髮生長", 
+                contra: "- 對肝臟有神輕微毒性, 避免長期及大量使用\n-有神經毒性, 會引起癲癎, 不適宜6歲以下幼使用\n-影響藥物代謝, 不能口服"
+            },
+            { 
+                en: "Ho wood", cn: "芳樟/香樟", answers: ["Cinnamomum Camphora ct linalool"], family: "Lauraceae 樟科", 
+                chem: "單萜醇類: 沉香醇 (Linalool) 94%",
+                prop: "-抗菌\n-驅蟲\n-舒緩精神疲累、焦慮、壓力及抑鬱抑症狀, 幫助頭腦清醒\n-一般疼痛及肌肉痛楚\n-痤瘡、乾燥皮膚、痕癢、燙傷、皮膚炎、膿腫\n-支氣管炎、咳嗽及哮喘\n-傷風感冒", 
+                contra: "N/A"
+            },
+            { 
+                en: "Ravintsara", cn: "桉油樟/羅文莎葉", answers: ["Cinnamomum Camphora ct 1.8-cineole"], family: "Lauraceae 樟科", 
+                chem: "氧化物: 1,8-桉油醇 (1,8-cineole) 58%",
+                prop: "-失眠\n-肌肉疲勞、神經肌肉問題\n-疱疹、水痘、病毒性肝炎\n-各種呼吸系統問題\n-支氣管炎、鼻竇炎\n-腸炎、胃部、肝臟\n-腺熱、百日咳、病毒感染",  
+                contra: "- 對肝臟有神輕微毒性, 避免長期及大量使用\n-有神經毒性, 會引起癲癎, 不適宜6歲以下幼使用\n-影響藥物代謝, 不能口服"
+            },
+        ];
+
+        // --- 2. 核心邏輯 ---
+        const app = {
+            state: {
+                queue: [],
+                currentIdx: 0,
+                score: 0,
+                mode: 'all', 
+                mistakeBank: new Set()
+            },
+            
+            els: {
+                home: document.getElementById('screen-home'),
+                quiz: document.getElementById('screen-quiz'),
+                result: document.getElementById('screen-result'),
+                statTotal: document.getElementById('stat-total-items'),
+                statWrong: document.getElementById('stat-wrong-items'),
+                btnReview: document.getElementById('btn-review'),
+                progressBar: document.getElementById('progress-bar'),
+                progressContainer: document.getElementById('progress-container'),
+                qCurrent: document.getElementById('q-current'),
+                qTotal: document.getElementById('q-total'),
+                qText: document.getElementById('q-text'),
+                qCn: document.getElementById('q-cn'),
+                input: document.getElementById('answer-input'),
+                inputIcon: document.getElementById('input-icon'),
+                feedback: document.getElementById('feedback-box'),
+                fbCorrect: document.getElementById('fb-correct'),
+                fbCorrectText: document.getElementById('fb-correct-text'),
+                fbWrong: document.getElementById('fb-wrong'),
+                fbWrongCorrectText: document.getElementById('fb-wrong-correct-text'),
+                fbUserText: document.getElementById('fb-user-text'),
+                fbFamily: document.getElementById('fb-family'), // 新增
+                fbChem: document.getElementById('fb-chem'),
+                fbProp: document.getElementById('fb-prop'),
+                fbContra: document.getElementById('fb-contra'),
+                btnSubmit: document.getElementById('btn-submit'),
+                btnNext: document.getElementById('btn-next'),
+                resScore: document.getElementById('res-score'),
+                resTotal: document.getElementById('res-total'),
+                resMsgBox: document.getElementById('res-msg-box'),
+                resMsgText: document.getElementById('res-msg-text')
+            },
+
+            init() {
+                SafeStorage.init();
+                this.loadMistakes();
+                this.updateHomeStats();
+                
+                this.els.input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (!this.els.btnSubmit.classList.contains('hidden')) {
+                            this.checkAnswer();
+                        } else {
+                            this.nextQuestion();
+                        }
+                    }
+                });
+            },
+
+            loadMistakes() {
+                const saved = SafeStorage.getItem('latin_mistakes_v1');
+                if (saved) {
+                    try { this.state.mistakeBank = new Set(JSON.parse(saved)); } catch(e) { this.state.mistakeBank = new Set(); }
+                }
+            },
+
+            saveMistakes() {
+                SafeStorage.setItem('latin_mistakes_v1', JSON.stringify([...this.state.mistakeBank]));
+                this.updateHomeStats();
+            },
+
+            resetMemory() {
+                if(confirm("確定要清除所有錯題記憶嗎？")) {
+                    this.state.mistakeBank.clear();
+                    this.saveMistakes();
+                    location.reload();
+                }
+            },
+
+            updateHomeStats() {
+                this.els.statTotal.textContent = DB.length;
+                const wrongCount = this.state.mistakeBank.size;
+                this.els.statWrong.textContent = wrongCount;
+                if (wrongCount > 0) {
+                    this.els.btnReview.classList.remove('hidden');
+                    this.els.btnReview.querySelector('.font-bold').textContent = `複習 ${wrongCount} 個需加強題目`;
+                } else {
+                    this.els.btnReview.classList.add('hidden');
+                }
+            },
+
+            goHome() {
+                this.els.result.classList.add('hidden');
+                this.els.quiz.classList.add('hidden');
+                this.els.home.classList.remove('hidden');
+                this.els.progressContainer.classList.add('hidden');
+                this.updateHomeStats();
+            },
+
+            startQuiz(mode) {
+                this.state.mode = mode;
+                this.state.score = 0;
+                this.state.currentIdx = 0;
+                let indices = mode === 'all' ? DB.map((_, i) => i) : [...this.state.mistakeBank];
+                this.state.queue = indices.sort(() => Math.random() - 0.5);
+                
+                this.els.home.classList.add('hidden');
+                this.els.result.classList.add('hidden');
+                this.els.quiz.classList.remove('hidden');
+                this.els.progressContainer.classList.remove('hidden');
+                this.renderQuestion();
+            },
+
+            renderQuestion() {
+                const dbIndex = this.state.queue[this.state.currentIdx];
+                const q = DB[dbIndex];
+                
+                this.els.qCurrent.textContent = this.state.currentIdx + 1;
+                this.els.qTotal.textContent = this.state.queue.length;
+                this.els.progressBar.style.width = `${(this.state.currentIdx / this.state.queue.length) * 100}%`;
+                
+                this.els.qText.textContent = q.en;
+                this.els.qCn.textContent = q.cn;
+                
+                this.els.input.value = '';
+                this.els.input.disabled = false;
+                this.els.input.className = "latin-input w-full p-4 text-lg border-2 border-slate-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 outline-none transition-all placeholder-slate-300 text-slate-800";
+                this.els.inputIcon.classList.add('hidden');
+                this.els.input.focus();
+                
+                this.els.feedback.classList.add('hidden');
+                this.els.fbCorrect.classList.add('hidden');
+                this.els.fbWrong.classList.add('hidden');
+                
+                this.els.btnSubmit.classList.remove('hidden');
+                this.els.btnNext.classList.add('hidden');
+                
+                // Scroll to top
+                document.querySelector('.overflow-y-auto').scrollTop = 0;
+            },
+
+            normalize(str) { return str.toLowerCase().trim().replace(/\s+/g, ' '); },
+
+            checkAnswer() {
+                const dbIndex = this.state.queue[this.state.currentIdx];
+                const q = DB[dbIndex];
+                const userVal = this.els.input.value;
+                const userNorm = this.normalize(userVal);
+                const isCorrect = q.answers.some(ans => this.normalize(ans) === userNorm);
+                
+                this.els.input.disabled = true;
+                this.els.btnSubmit.classList.add('hidden');
+                this.els.btnNext.classList.remove('hidden');
+                this.els.feedback.classList.remove('hidden');
+                this.els.inputIcon.classList.remove('hidden');
+                
+                // Fill Details
+                this.els.fbFamily.textContent = q.family; // 新增
+                this.els.fbChem.textContent = q.chem;
+                this.els.fbProp.textContent = q.prop;
+                this.els.fbContra.textContent = q.contra;
+
+                if (isCorrect) {
+                    this.state.score++;
+                    if (this.state.mistakeBank.has(dbIndex)) {
+                        this.state.mistakeBank.delete(dbIndex);
+                        this.saveMistakes();
+                    }
+                    this.els.input.classList.remove('border-slate-200');
+                    this.els.input.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-800');
+                    this.els.inputIcon.innerHTML = `<svg class="text-emerald-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                    
+                    this.els.fbCorrect.classList.remove('hidden');
+                    this.els.fbCorrectText.textContent = q.answers[0];
+                } else {
+                    if (!this.state.mistakeBank.has(dbIndex)) {
+                        this.state.mistakeBank.add(dbIndex);
+                        this.saveMistakes();
+                    }
+                    this.els.input.classList.remove('border-slate-200');
+                    this.els.input.classList.add('border-red-500', 'bg-red-50', 'text-red-800', 'shake');
+                    this.els.inputIcon.innerHTML = `<svg class="text-red-500" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+                    
+                    this.els.fbWrong.classList.remove('hidden');
+                    this.els.fbWrongCorrectText.textContent = q.answers[0];
+                    this.els.fbUserText.textContent = userVal || "(未輸入)";
+                }
+
+                // Smooth scroll to feedback
+                setTimeout(() => {
+                    this.els.feedback.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            },
+
+            nextQuestion() {
+                this.state.currentIdx++;
+                if (this.state.currentIdx < this.state.queue.length) {
+                    this.renderQuestion();
+                } else {
+                    this.showResult();
+                }
+            },
+
+            showResult() {
+                this.els.quiz.classList.add('hidden');
+                this.els.result.classList.remove('hidden');
+                this.els.progressBar.style.width = '100%';
+                
+                this.els.resScore.textContent = this.state.score;
+                this.els.resTotal.textContent = this.state.queue.length;
+
+                const wrongCount = this.state.queue.length - this.state.score;
+                this.els.resMsgBox.classList.remove('hidden');
+                
+                if (this.state.mode === 'review') {
+                    this.els.resMsgText.textContent = wrongCount === 0 ? "太棒了！您已經消滅了這批錯題！" : `還有 ${wrongCount} 題需要繼續努力。`;
+                } else {
+                    this.els.resMsgText.textContent = wrongCount > 0 ? `新增了 ${wrongCount} 個題目到錯題庫。` : "完美！沒有新增任何錯題。";
+                }
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
