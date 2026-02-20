@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植物科屬芳療記憶圖</title>
+    <style>
+        :root {
+            --primary-color: #6b4c9a; /* 講義中的紫色調 */
+            --secondary-color: #f3f0f7;
+            --text-color: #333;
+            --bg-color: #f9f9f9;
+            --card-bg: #ffffff;
+            --tag-bg: #e9ecef;
+            --tag-text: #495057;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            gap: 15px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+
+        .card-header {
+            background: white;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 6px solid var(--primary-color);
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.3rem; /* 稍微加大中文標題 */
+            color: var(--primary-color);
+        }
+
+        /* 修改：科屬拉丁學名放大 */
+        .card-header .latin-name {
+            display: block;
+            font-size: 1.1rem; /* 放大字體 */
+            color: #666;       /* 稍微加深顏色以增加對比 */
+            font-style: italic;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .toggle-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+
+        /* Content Styles */
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: var(--secondary-color);
+        }
+
+        .content-inner {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-weight: bold;
+            color: #444;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 4px;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+
+        li {
+            margin-bottom: 8px; /* 稍微增加行距讓大字體不擁擠 */
+            font-size: 0.95rem;
+        }
+
+        /* Highlighting */
+        .oil-name {
+            font-weight: bold;
+            color: #2c3e50;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 3px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 2px 0;
+            font-size: 1em;
+        }
+
+        /* 修改：精油拉丁學名放大 */
+        .latin-oil {
+            font-style: italic;
+            font-weight: normal;
+            font-size: 1rem; /* 放大至與一般文字同大 */
+            color: #555;     /* 加深顏色 */
+            margin-left: 6px;
+            display: inline-block; /* 避免在小螢幕上被切斷 */
+        }
+
+        /* Function Tag Style */
+        .function-tag {
+            color: var(--tag-text);
+            background-color: var(--tag-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        /* Active State */
+        .card.active .toggle-icon {
+            transform: rotate(45deg);
+        }
+
+        .card.active .card-content {
+            max-height: 1500px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: #999;
+            padding-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            .card-header h2 { font-size: 1.2rem; }
+            /* 手機版讓拉丁名換行顯示，避免擠壓 */
+            .latin-oil {
+                display: block; 
+                margin-left: 0;
+                margin-top: 2px;
+                margin-bottom: 8px;
+                color: #666;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>植物科屬芳療記憶圖</h1>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. Annonaceae 番荔枝科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>番荔枝科</h2>
+                    <span class="latin-name">Annonaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <div>
+                            <span class="oil-name">依蘭依蘭 Ylang Ylang</span> <span class="latin-oil">(Cananga odorata)</span>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">平伏 (Soothing)</span></li>
+                            <li><span class="function-tag">平衡 (Balancing)</span></li>
+                            <li><span class="function-tag">平靜 (Calming)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Burseraceae 橄欖科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>橄欖科</h2>
+                    <span class="latin-name">Burseraceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">乳香 Frankincense</span> <span class="latin-oil">(Boswellia carteri)</span></li>
+                            <li><span class="oil-name">印度乳香 Indian Frankincense</span> <span class="latin-oil">(Boswellia serrata)</span></li>
+                            <li><span class="oil-name">欖香脂 Elemi</span> <span class="latin-oil">(Canarium luzonicum)</span></li>
+                            <li><span class="oil-name">沒藥 Myrrh</span> <span class="latin-oil">(Commiphora myrrha)</span></li>
+                            <li><span class="oil-name">秘魯聖木 Palo Santo</span> <span class="latin-oil">(Bursera graveolens)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">化痰</span></li>
+                            <li>促進傷口癒合及潰瘍</li>
+                            <li>減少疤痕組織</li>
+                            <li>具有酸類，親膚性強</li>
+                            <li>護膚抗皺</li>
+                            <li>促進血液循環，活血化瘀</li>
+                            <li>強效抗菌消炎</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Cistaceae 半日花科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>半日花科</h2>
+                    <span class="latin-name">Cistaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <div>
+                            <span class="oil-name">岩玫瑰 Cistus</span> <span class="latin-oil">(Cistus ladaniferus)</span>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">促進傷口癒合</span></li>
+                            <li><span class="function-tag">止血</span></li>
+                            <li>提升免疫力</li>
+                            <li>抗病毒</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Compositae / Asteraceae 菊科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>菊科</h2>
+                    <span class="latin-name">Compositae / Asteraceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">德國洋甘菊 Chamomile German</span> <span class="latin-oil">(Matricaria chamomilla)</span></li>
+                            <li><span class="oil-name">羅馬洋甘菊 Chamomile Roman</span> <span class="latin-oil">(Anthemis nobilis)</span></li>
+                            <li><span class="oil-name">永久花 Immortelle</span> <span class="latin-oil">(Helichrysum italicum)</span></li>
+                            <li><span class="oil-name">萬壽菊 Tagetes</span> <span class="latin-oil">(Tagetes minuta)</span></li>
+                            <li><span class="oil-name">蓍草 Yarrow</span> <span class="latin-oil">(Achillea millefolium)</span></li>
+                            <li><span class="oil-name">龍艾 Tarragon</span> <span class="latin-oil">(Artemisia dracunculus)</span></li>
+                            <li><span class="oil-name">艾草 Mugwort</span> <span class="latin-oil">(Artemisia vulgaris)</span></li>
+                            <li><span class="oil-name">摩洛哥藍艾菊 Blue Tansy</span> <span class="latin-oil">(Tanacetum annuum)</span></li>
+                            <li><span class="oil-name">土木香 Elecampane</span> <span class="latin-oil">(Inula graveolens)</span></li>
+                            <li><span class="oil-name">一枝黃花 Gold Rod</span> <span class="latin-oil">(Solidago canadensis)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">殺菌</span></li>
+                            <li><span class="function-tag">平靜</span></li>
+                            <li>抗過敏性</li>
+                            <li>抗真菌</li>
+                            <li>抗感染</li>
+                            <li>消化不良</li>
+                            <li>發炎</li>
+                            <li>失眠、壓力</li>
+                            <li>*某些具酮類要小心用量</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Coniferae / Cupressaceae 柏科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>柏科</h2>
+                    <span class="latin-name">Coniferae / Cupressaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">絲柏 Cypress</span> <span class="latin-oil">(Cupressus sempervirens)</span></li>
+                            <li><span class="oil-name">杜松 Juniper</span> <span class="latin-oil">(Juniperus communis)</span></li>
+                            <li><span class="oil-name">杜松果 Juniper Berry</span> <span class="latin-oil">(Juniperus communis)</span></li>
+                            <li><span class="oil-name">維吉尼亞雪松 Cedarwood Virginian</span> <span class="latin-oil">(Juniperus virginiana)</span></li>
+                            <li><span class="oil-name">藍絲柏 Blue Cypress</span> <span class="latin-oil">(Callitris intratropica)</span></li>
+                            <li><span class="oil-name">圓柏 Savin</span> <span class="latin-oil">(Juniperus sabina)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">抗菌、抗感染</span></li>
+                            <li>殺菌</li>
+                            <li>黏液溶解</li>
+                            <li>呼吸系統消毒</li>
+                            <li>消除水腫、排毒</li>
+                            <li>促進循環，有助腎臟淨化</li>
+                            <li>*但用量過高是會刺激腎臟</li>
+                            <li>具有收斂特性，可以收緊毛孔</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Geraniaceae 牻牛兒苗科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>牻牛兒苗科</h2>
+                    <span class="latin-name">Geraniaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">天竺葵 Geranium</span> <span class="latin-oil">(Pelargonium graveolens)</span></li>
+                            <li><span class="oil-name">玫瑰天竺葵 Rose Geranium</span> <span class="latin-oil">(Pelargonium roseum)</span></li>
+                            <li><span class="oil-name">大根老鸛草 True Geranium / Zdravets</span> <span class="latin-oil">(Geranium macrorrhizum)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">抗紅腫發炎</span></li>
+                            <li>殺菌</li>
+                            <li>抗毒素</li>
+                            <li>滋補神經</li>
+                            <li>平伏</li>
+                            <li>洗淨及冷卻皮膚</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Labiatae / Lamiaceae 唇形科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>唇形科</h2>
+                    <span class="latin-name">Labiatae / Lamiaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">羅勒 Basil</span> <span class="latin-oil">(Ocimum basilicum)</span></li>
+                            <li><span class="oil-name">快樂鼠尾草 Clary Sage</span> <span class="latin-oil">(Salvia sclarea)</span></li>
+                            <li><span class="oil-name">高地牛膝草 Mountain Hyssop</span> <span class="latin-oil">(Hyssopus decumbens)</span></li>
+                            <li><span class="oil-name">薰衣草 Lavender</span> <span class="latin-oil">(Lavandula angustifolia)</span></li>
+                            <li><span class="oil-name">醒目薰衣草 Lavandin</span> <span class="latin-oil">(Lavandula x intermedia)</span></li>
+                            <li><span class="oil-name">香蜂草 Melissa</span> <span class="latin-oil">(Melissa officinalis)</span></li>
+                            <li><span class="oil-name">甜橙薄荷 Orange Mint</span> <span class="latin-oil">(Mentha x citrata)</span></li>
+                            <li><span class="oil-name">胡椒薄荷 Peppermint</span> <span class="latin-oil">(Mentha x piperita)</span></li>
+                            <li><span class="oil-name">迷迭香 Rosemary</span> <span class="latin-oil">(Salvia rosmarinus)</span></li>
+                            <li><span class="oil-name">鼠尾草 Sage</span> <span class="latin-oil">(Salvia officinalis)</span></li>
+                            <li><span class="oil-name">甜馬鬱蘭 Sweet Marjoram</span> <span class="latin-oil">(Origanum majorana)</span></li>
+                            <li><span class="oil-name">百里香 Thyme</span> <span class="latin-oil">(Thymus vulgaris)</span></li>
+                            <li><span class="oil-name">廣藿香 Patchouli</span> <span class="latin-oil">(Pogostemon cablin)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">殺菌、止痛</span></li>
+                            <li>抗紅腫發炎</li>
+                            <li>治痙攣</li>
+                            <li>通經</li>
+                            <li>促進排汗</li>
+                            <li>呼吸系統</li>
+                            <li>防病毒</li>
+                            <li>平衡</li>
+                            <li>芳香</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. Lauraceae 樟科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>樟科</h2>
+                    <span class="latin-name">Lauraceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">羅文莎葉 Ravensara</span> <span class="latin-oil">(Ravensara aromatica)</span></li>
+                            <li><span class="oil-name">樟腦 Camphor</span> <span class="latin-oil">(Cinnamomum camphora)</span></li>
+                            <li><span class="oil-name">月桂 Bay Laurel</span> <span class="latin-oil">(Laurus nobilis)</span></li>
+                            <li><span class="oil-name">肉桂葉 Cinnamon leaf</span> <span class="latin-oil">(Cinnamomum zeylanicum)</span></li>
+                            <li><span class="oil-name">錫蘭肉桂皮 Cinnamon bark</span> <span class="latin-oil">(Cinnamomum verum)</span></li>
+                            <li><span class="oil-name">花梨木 Rosewood</span> <span class="latin-oil">(Aniba rosaeodora)</span></li>
+                            <li><span class="oil-name">芳樟/葉 Ho wood/leaf</span> <span class="latin-oil">(Cinnamomum camphora ct linalool)</span></li>
+                            <li><span class="oil-name">山雞椒 May Chang</span> <span class="latin-oil">(Litsea cubeba)</span></li>
+                            <li><span class="oil-name">桉油樟 Ravintsara</span> <span class="latin-oil">(Cinnamomum camphora ct 1.8 cineole)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">抗真菌</span></li>
+                            <li><span class="function-tag">殺菌效力強勁</span>，快速見效</li>
+                            <li>抗病毒</li>
+                            <li>提升免疫力</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. Myristicaceae 肉豆蔻科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>肉豆蔻科</h2>
+                    <span class="latin-name">Myristicaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <div>
+                            <span class="oil-name">肉豆蔻 Nutmeg</span> <span class="latin-oil">(Myristica fragrans)</span>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">止痛</span></li>
+                            <li>幫助減輕肌肉疼痛及痛楚</li>
+                            <li>強力大腦刺激劑</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+         <!-- 10. Myrtaceae 桃金孃科 -->
+         <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>桃金孃科</h2>
+                    <span class="latin-name">Myrtaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">西印度月桂 Bay</span> <span class="latin-oil">(Pimenta racemosa)</span></li>
+                            <li><span class="oil-name">丁香 Clove</span> <span class="latin-oil">(Eugenia caryophyllata)</span></li>
+                            <li><span class="oil-name">尤加利 Eucalyptus</span> <span class="latin-oil">(Eucalyptus staigeriana, dives, smithii, globulus, radiata, citriodora)</span></li>
+                            <li><span class="oil-name">綠花白千層 Niaouli</span> <span class="latin-oil">(Melaleuca viridiflora)</span></li>
+                            <li><span class="oil-name">香桃木 Myrtle</span> <span class="latin-oil">(Myrtus communis)</span></li>
+                            <li><span class="oil-name">茶樹 Tea tree</span> <span class="latin-oil">(Melaleuca alternifolia)</span></li>
+                            <li><span class="oil-name">松紅梅 Manuka</span> <span class="latin-oil">(Leptospermum scoparium)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">高度殺菌</span></li>
+                            <li>抗病毒</li>
+                            <li>滋補及刺激激勵</li>
+                            <li>呼吸系統</li>
+                            <li>黏液溶解</li>
+                            <li>有助支氣管擴張</li>
+                            <li>*由於含有高量的氧化物及醛類，可能會引起皮膚刺激</li>
+                            <li>適用於肌肉及關節痛症</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Oleaceae 木犀科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>木犀科</h2>
+                    <span class="latin-name">Oleaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">茉莉 Jasmine</span> <span class="latin-oil">(Jasminum sambac / Jasminum officinale var. Grandiflorum / Jasminum auriculatum)</span></li>
+                            <li><span class="oil-name">桂花 Osmanthus</span> <span class="latin-oil">(Osmanthus fragrans)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">抗憂鬱</span></li>
+                            <li><span class="function-tag">抗紅腫發炎</span></li>
+                            <li>驅風</li>
+                            <li>鎮靜</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. Pinaceae / Abietaceae 松科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>松科</h2>
+                    <span class="latin-name">Pinaceae / Abietaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">大西洋雪松 Cedarwood Atlas</span> <span class="latin-oil">(Cedrus atlantica)</span></li>
+                            <li><span class="oil-name">歐洲赤松 Pine</span> <span class="latin-oil">(Pinus sylvestris)</span></li>
+                            <li><span class="oil-name">膠冷杉 Fir (Balsam Fir)</span> <span class="latin-oil">(Abies balsamea)</span></li>
+                            <li><span class="oil-name">雲杉 Spruce</span> (例如: <span class="oil-name">黑雲杉 Black Spruce</span> <span class="latin-oil">Picea mariana</span>)</li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">高度殺菌</span></li>
+                            <li>黏膜炎</li>
+                            <li>提升腎上腺素</li>
+                            <li>緩和呼吸道發炎</li>
+                            <li>處理關節炎</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 13. Piperaceae 胡椒科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>胡椒科</h2>
+                    <span class="latin-name">Piperaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <div>
+                            <span class="oil-name">黑胡椒 Black Pepper</span> <span class="latin-oil">(Piper nigrum)</span>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">抗黏膜炎</span></li>
+                            <li>循環系統及消化系統的刺激劑</li>
+                            <li>止痛</li>
+                            <li>化痰</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 14. Poaceae / Gramineae 禾本科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>禾本科</h2>
+                    <span class="latin-name">Poaceae / Gramineae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">香茅 Citronella</span> <span class="latin-oil">(Cymbopogon nardus)</span></li>
+                            <li><span class="oil-name">檸檬香茅 Lemongrass</span> <span class="latin-oil">(Cymbopogon citratus)</span></li>
+                            <li><span class="oil-name">玫瑰草 Palmarosa</span> <span class="latin-oil">(Cymbopogon martini)</span></li>
+                            <li><span class="oil-name">岩蘭草 Vetiver</span> <span class="latin-oil">(Vetiveria zizanioides)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">墮膚</span> (註：講義原文為"墮膚"，推測可能指對皮膚有特定作用或誤植，一般禾本科有驅蟲、鎮靜、調理油脂等功效)</li>
+                            <li>疼痛及痛楚</li>
+                            <li>促進血液循環</li>
+                            <li>循環系統的刺激劑</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 15. Rosaceae 薔薇科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>薔薇科</h2>
+                    <span class="latin-name">Rosaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">大馬士革玫瑰 Rose</span> <span class="latin-oil">(Rosa damascena)</span></li>
+                            <li><span class="oil-name">白玫瑰 Rose Blossom white</span> <span class="latin-oil">(Rosa alba)</span></li>
+                            <li><span class="oil-name">香精玫瑰 Rose</span> <span class="latin-oil">(Rosa centifolia)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">殺菌</span></li>
+                            <li>抗病毒</li>
+                            <li>抗紅腫發炎</li>
+                            <li>抗真菌</li>
+                            <li>平衡荷爾蒙</li>
+                            <li>對皮膚有益</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 16. Rutaceae 芸香科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>芸香科</h2>
+                    <span class="latin-name">Rutaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">佛手柑 Bergamot</span> <span class="latin-oil">(Citrus bergamia)</span></li>
+                            <li><span class="oil-name">葡萄柚 Grapefruit</span> <span class="latin-oil">(Citrus paradisi)</span></li>
+                            <li><span class="oil-name">檸檬 Lemon</span> <span class="latin-oil">(Citrus limonum)</span></li>
+                            <li><span class="oil-name">紅橘 Mandarin</span> <span class="latin-oil">(Citrus reticulata)</span></li>
+                            <li><span class="oil-name">橙花 Neroli</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
+                            <li><span class="oil-name">苦橙 Orange bitter</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
+                            <li><span class="oil-name">甜橙 Orange sweet</span> <span class="latin-oil">(Citrus sinensis)</span></li>
+                            <li><span class="oil-name">古龍葉 Petitgrain</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
+                            <li><span class="oil-name">阿米香樹/西印度檀香 Amyris</span> <span class="latin-oil">(Amyris balsamifera)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">對消化系統有平衡及刺激作用</span></li>
+                            <li>殺菌</li>
+                            <li>鎮靜神經</li>
+                            <li>精神大振</li>
+                            <li>抗病毒</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 17. Santalaceae 檀香科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>檀香科</h2>
+                    <span class="latin-name">Santalaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">檀香/東印度檀香 Sandalwood</span> <span class="latin-oil">(Santalum album)</span></li>
+                            <li><span class="oil-name">澳洲檀香 Sandalwood, Australia</span> <span class="latin-oil">(Santalum spicatum)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">平衡神經系統</span></li>
+                            <li>呼吸系統及排泄系統</li>
+                            <li>乾燥皮膚</li>
+                            <li>用溶劑式提煉</li>
+                            <li>調節賀爾蒙</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 18. Styracaceae / Styrax 安息香科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>安息香科</h2>
+                    <span class="latin-name">Styracaceae / Styrax</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <div>
+                            <span class="oil-name">安息香 Benzoin</span> <span class="latin-oil">(Styrax benzoin)</span>
+                        </div>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">抗黏膜炎</span></li>
+                            <li>化痰</li>
+                            <li>皮膚治療</li>
+                            <li>關節痛楚</li>
+                            <li>循環不佳</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 19. Umbelliferae / Apiaceae 繖形科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>繖形科</h2>
+                    <span class="latin-name">Umbelliferae / Apiaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">歐白芷 Angelica</span> <span class="latin-oil">(Angelica archangelica)</span></li>
+                            <li><span class="oil-name">胡蘿蔔籽 Carrot Seed</span> <span class="latin-oil">(Daucus carota)</span></li>
+                            <li><span class="oil-name">甜茴香 Fennel Sweet</span> <span class="latin-oil">(Foeniculum vulgare)</span></li>
+                            <li><span class="oil-name">歐芹 Parsley</span> <span class="latin-oil">(Petroselinum crispum)</span></li>
+                            <li><span class="oil-name">芹菜籽 Celery Seed</span> <span class="latin-oil">(Apium graveolens)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">幫助消化</span></li>
+                            <li>分解脂肪</li>
+                            <li>刺激膽汁流動</li>
+                            <li>暖身</li>
+                            <li>刺激</li>
+                            <li>驅風</li>
+                            <li>抗細菌</li>
+                            <li>殺菌</li>
+                            <li>治痙攣</li>
+                            <li>抗紅腫發炎</li>
+                            <li>通經</li>
+                            <li>滋補劑</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 20. Valerianaceae 敗醬草科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>敗醬草科</h2>
+                    <span class="latin-name">Valerianaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">穗甘松 Spikenard</span> <span class="latin-oil">(Nardostachys jatamansi)</span></li>
+                            <li><span class="oil-name">纈草 Valerian</span> <span class="latin-oil">(Valeriana officinalis)</span></li>
+                            <li><span class="oil-name">印度纈草 Valerian (Tagar)</span> <span class="latin-oil">(Valeriana wallichi)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">對神經系統有安神作用</span></li>
+                            <li>治療神經痛症</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 21. Zingiberaceae 薑科 -->
+        <div class="card">
+            <div class="card-header" onclick="toggleCard(this)">
+                <div>
+                    <h2>薑科</h2>
+                    <span class="latin-name">Zingiberaceae</span>
+                </div>
+                <span class="toggle-icon">+</span>
+            </div>
+            <div class="card-content">
+                <div class="content-inner">
+                    <div class="section">
+                        <div class="section-title">代表精油</div>
+                        <ul>
+                            <li><span class="oil-name">小荳蔻 Cardamom</span> <span class="latin-oil">(Elettaria cardamomum)</span></li>
+                            <li><span class="oil-name">薑 Ginger</span> <span class="latin-oil">(Zingiber officinale)</span></li>
+                        </ul>
+                    </div>
+                    <div class="section">
+                        <div class="section-title">主要功能</div>
+                        <ul>
+                            <li><span class="function-tag">消化系統滋補劑</span></li>
+                            <li>抗黏膜炎</li>
+                            <li>對肌肉系統有和暖作用</li>
+                            <li>止痛，尤其是牙痛</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <p>Designed for Learning</p>
+    </footer>
+
+    <script>
+        function toggleCard(header) {
+            const card = header.parentElement;
+            const content = card.querySelector('.card-content');
+            
+            // Toggle current card
+            card.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
