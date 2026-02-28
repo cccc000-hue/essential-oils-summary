@@ -31,9 +31,8 @@
 
     <!-- Header & Search -->
     <div class="sticky top-0 z-50 bg-white shadow-md p-4">
-        <!-- [新功能] 頂部導航列：包含返回按鈕與標題 -->
+        <!-- 頂部導航列 -->
         <div class="flex items-center justify-between mb-3 relative">
-            <!-- 返回主頁按鈕 -->
             <a href="index.html" class="flex items-center gap-1 text-gray-500 hover:text-green-600 hover:bg-green-50 px-3 py-2 rounded-lg transition-all duration-200 group">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -41,12 +40,10 @@
                 <span class="text-sm font-bold hidden sm:inline">返回目錄</span>
             </a>
 
-            <!-- 標題 (使用 absolute centering 或 flex-grow 確保置中) -->
             <h1 class="text-xl font-bold text-gray-800 text-center flex-grow pr-12">
                 🌿 精油化學成分速查
             </h1>
         </div>
-        
         
         <!-- Search Bar -->
         <div class="relative max-w-lg mx-auto mb-3">
@@ -59,7 +56,7 @@
             </div>
         </div>
 
-        <!-- Quick Filters (Modified to Flex Wrap) -->
+        <!-- Quick Filters -->
         <div id="filterContainer" class="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto">
             <button onclick="filterFamily('all', this)" class="filter-btn px-3 py-1 bg-gray-700 text-white rounded-full text-xs shadow-sm hover:bg-gray-800 transition-all btn-active">全部</button>
             <button onclick="filterFamily('萜烯類', this)" class="filter-btn px-3 py-1 bg-orange-100 text-orange-800 border border-orange-200 rounded-full text-xs hover:bg-orange-200 transition-all">萜烯類</button>
@@ -80,7 +77,6 @@
     </div>
 
     <script>
-        // Data compiled from the provided Mindmap HTML
         const chemicalData = [
             // --- 1. 萜烯類 (Terpenes) ---
             {
@@ -95,6 +91,7 @@
                     { oil: "甜橙", latin: "Citrus aurantium var sinensis", pct: "95%" },
                     { oil: "苦橙 Petitgrain", latin: "Citrus aurantium var. amara", pct: "95%" },
                     { oil: "西柚", latin: "Citrus paradisi", pct: "94%" },
+                    { oil: "芹菜籽", latin: "Apium graveolens", pct: "70%" },
                     { oil: "檸檬", latin: "Citrus limon", pct: "70%" },
                     { oil: "蜜柑", latin: "Citrus reticulata", pct: "70%" },
                     { oil: "秘魯聖木", latin: "Bursera graveolens", pct: "70%" },
@@ -113,7 +110,7 @@
                 subFamily: "單萜烯 (Monoterpenes)",
                 class: "family-terpenes",
                 desc: "具有松樹氣息。",
-                effects: ["可增強腎上腺素，能對抗壓力、強化戰鬥意志的荷爾蒙，但是松油萜的效果十分緩慢，使用者需要連續不間斷使用6個月，方能感受到耐力與抗性提升", "抗關節炎、類似可體松作用", "驅蟲、除蟲"],
+                effects: ["可增強腎上腺素，能對抗壓力、強化戰鬥意志的荷爾蒙", "抗關節炎、類似可體松作用", "驅蟲、除蟲"],
                 sources: [
                     { oil: "歐洲赤松", latin: "Pinus sylvestris", pct: "66%" },
                     { oil: "絲柏", latin: "Cupressus sempervirens", pct: "50%" },
@@ -122,10 +119,12 @@
                     { oil: "岩玫瑰", latin: "Cistus ladanifer", pct: "38% (α-pinene)" },
                     { oil: "杜松果", latin: "Juniperus communis", pct: "33%" },
                     { oil: "乳香", latin: "Boswellia carterii", pct: "31% (α-pinene)" },
+                    { oil: "歐白芷根", latin: "Angelica archangelica", pct: "26% (α-pinene)" },
                     { oil: "高地牛膝草", latin: "Hyssopus decumbens", pct: "25% (β-pinene)" },
                     { oil: "迷迭香", latin: "Rosmarinus officinalis ct. camphor", pct: "22%" },
                     { oil: "永久花", latin: "Helichrysum italicum", pct: "21% (α-pinene)" },
                     { oil: "迷迭香", latin: "Rosmarinus officinalis ct. 1,8 cineole", pct: "14%" },
+                    { oil: "胡蘿蔔籽", latin: "Daucus carota", pct: "13.5% (α-pinene)" },
                     { oil: "藍膠尤加利", latin: "Eucalyptus globulus", pct: "10% (α-pinene)" },
                     { oil: "檸檬", latin: "Citrus limon", pct: "10% (β-pinene)" },
                     { oil: "澳洲尤加利", latin: "Eucalyptus radiata", pct: "3% (α-pinene)" }
@@ -171,6 +170,7 @@
                 effects: ["空氣中抗菌", "殺細菌", "化痰", "止痛，尤其是肌肉痠痛"],
                 caution: "用量過高容易使皮膚過敏發紅",
                 sources: [
+                    { oil: "歐白芷根", latin: "Angelica archangelica", pct: "18%" },
                     { oil: "絲柏", latin: "Cupressus sempervirens", pct: "12%" }
                 ]
             },
@@ -198,6 +198,7 @@
                 sources: [
                     { oil: "粉紅胡椒", latin: "Schinus molle", pct: "22%" },
                     { oil: "杜松果", latin: "Juniperus communis", pct: "14%" },
+                    { oil: "歐白芷根", latin: "Angelica archangelica", pct: "5%" },
                     { oil: "月桂葉", latin: "Laurus nobilis", pct: "1.6%" }
                 ]
             },
@@ -212,6 +213,45 @@
                 caution: "高比例萜烯類可能引致皮膚過敏。",
                 sources: [
                     { oil: "粉紅胡椒", latin: "Schinus molle", pct: "23%" }
+                ]
+            },
+            {
+                name: "α-薑烯 (alpha-zingiberene)",
+                enName: "alpha-zingiberene",
+                family: "萜烯類",
+                subFamily: "倍半萜烯 (Sesquiterpenes)",
+                class: "family-terpenes",
+                desc: "薑精油的主要成分，賦予其獨特的氣味。",
+                effects: ["促進消化系統蠕動", "暖胃、止嘔", "抗發炎", "鎮靜"],
+                caution: "",
+                sources: [
+                    { oil: "薑", latin: "Zingiber officinale", pct: "28%" }
+                ]
+            },
+            {
+                name: "倍半水芹烯 (sesquiphellandrene)",
+                enName: "sesquiphellandrene",
+                family: "萜烯類",
+                subFamily: "倍半萜烯 (Sesquiterpenes)",
+                class: "family-terpenes",
+                desc: "倍半萜烯的一種，常與薑烯共存。",
+                effects: ["抗病毒", "抗菌", "消炎"],
+                caution: "",
+                sources: [
+                    { oil: "薑", latin: "Zingiber officinale", pct: "12%" }
+                ]
+            },
+            {
+                name: "金合歡烯 (trans-α-farnesene)",
+                enName: "trans-α-farnesene",
+                family: "萜烯類",
+                subFamily: "倍半萜烯 (Sesquiterpenes)",
+                class: "family-terpenes",
+                desc: "倍半萜烯的一種，具有青蘋果般的香氣。",
+                effects: ["鎮靜神經", "抗組織胺（抗過敏）", "抗發炎", "安撫"],
+                caution: "",
+                sources: [
+                    { oil: "薑", latin: "Zingiber officinale", pct: "9%" }
                 ]
             },
             {
@@ -329,7 +369,7 @@
                 desc: "C20 分子。",
                 effects: ["抗真菌及過濾性病毒", "部份成分有怯痰, 通便之作用"],
                 caution: "",
-                sources: [] // 資料中未列出具體雙萜烯成分的精油，僅列出類別屬性
+                sources: []
             },
 
             // --- 2. 醇類 (Alcohols) ---
@@ -440,6 +480,19 @@
                 caution: "🛡️ 安全：沒有任何構成皮膚過敏的危險，適合兒童及年長人士。",
                 sources: [
                     { oil: "秘魯聖木", latin: "Bursera graveolens", pct: "10%" }
+                ]
+            },
+            {
+                name: "胡蘿蔔醇 (Carotol)",
+                enName: "Carotol",
+                family: "醇類",
+                subFamily: "倍半萜醇 (Sesquiterpenols)",
+                class: "family-alcohols",
+                desc: "倍半萜醇，胡蘿蔔籽精油的核心成分。",
+                effects: ["著名的養肝成分，促進肝細胞再生", "皮膚細胞再生，淡化斑點，改善暗沉", "降低膽固醇", "抗皺、美白"],
+                caution: "",
+                sources: [
+                    { oil: "胡蘿蔔籽", latin: "Daucus carota", pct: "25%" }
                 ]
             },
             {
@@ -742,7 +795,7 @@
                 desc: "精油中很少含有酸類。",
                 effects: ["消炎", "抗發炎", "鎮靜"],
                 caution: "🛡️ 安全：沒有危險性。精油內的酸質呈現自由態較罕有。",
-                sources: [] // 資料中無具體成分列表
+                sources: []
             },
 
             // --- 7. 酯類 (Esters) ---
@@ -807,6 +860,19 @@
                 ]
             },
             {
+                name: "乙酸萜品酯 (Terpinyl acetate)",
+                enName: "Terpinyl acetate",
+                family: "酯類",
+                subFamily: "酯類 (Esters)",
+                class: "family-esters",
+                desc: "酯類，常見於小荳蔻。",
+                effects: ["抗痙攣、特別是針對大腸、直腸，對於腸絞痛、腸躁症的緩解和效果佳", "增加呼吸道的順暢"],
+                caution: "🛡️ 無毒性",
+                sources: [
+                    { oil: "荳蔻", latin: "Elettaria cardamomum", pct: "48%" }
+                ]
+            },
+            {
                 name: "歐白芷酸異丁酯 (Isobutly angelate)",
                 enName: "Isobutly angelate",
                 family: "酯類",
@@ -849,6 +915,7 @@
                     { oil: "桉油樟/羅文莎葉", latin: "Cinnamomum Camphora ct 1.8-cineole", pct: "58%" },
                     { oil: "高地牛膝草", latin: "Hyssopus decumbens", pct: "50%" },
                     { oil: "迷迭香", latin: "Rosmarinus officinalis ct. 1,8 cineole", pct: "40%" },
+                    { oil: "荳蔻", latin: "Elettaria cardamomum", pct: "37%" },
                     { oil: "月桂葉", latin: "Laurus nobilis", pct: "32%" },
                     { oil: "穗花薰衣草", latin: "Lavandula latifolia", pct: "27%" },
                     { oil: "醒目薰衣草", latin: "Lavandula hybrida", pct: "5-25%" },
@@ -896,7 +963,21 @@
                 caution: "⚠️ 高劑量使用時可能會造成抽搐甚至死亡，使用上需特別小心。",
                 sources: [
                     { oil: "熱帶羅勒", latin: "Ocimum basilicum ct. Methyl-Chavicol", pct: "80%" },
-                    { oil: "甜羅勒", latin: "Ocimum basilicum ct. linalool", pct: "17%" }
+                    { oil: "甜羅勒", latin: "Ocimum basilicum ct. linalool", pct: "17%" },
+                    { oil: "甜茴香", latin: "Foeniculum vulgare", pct: "2-5%" }
+                ]
+            },
+            {
+                name: "反式洋茴香腦 (Anethole)",
+                enName: "Anethole",
+                family: "醚類",
+                subFamily: "酚醚類",
+                class: "family-ethers",
+                desc: "具有類似雌激素的結構。",
+                effects: ["抗痙攣（子宮卵巢）", "類雌激素、促進泌乳（豐胸）", "促副交感神經鎮靜、驅風消脹氣"],
+                caution: "⚠️ 神經毒性、肝毒性較高。需稀釋使用",
+                sources: [
+                    { oil: "甜茴香", latin: "Foeniculum vulgare", pct: "80%" }
                 ]
             },
             {
@@ -936,7 +1017,33 @@
                 desc: "內酯類分子較大。",
                 effects: ["消炎", "黏液溶解，化痰(更勝酮類)", "降溫"],
                 caution: "⚠️ 高劑量使用有機會引致神經中毒。",
-                sources: [] // 類別描述，無具體精油
+                sources: []
+            },
+            {
+                name: "瑟丹內酯 (Sedanenolide)",
+                enName: "Sedanenolide",
+                family: "內酯類",
+                subFamily: "苯酞內酯",
+                class: "family-lactones",
+                desc: "芹菜籽中的特有成分。",
+                effects: ["可以降低收縮壓，預防中風和心臟病", "良好的消炎藥，尤其風濕及痛風症狀", "有效提升肝臟分解毒素的功能"],
+                caution: "不具光敏性",
+                sources: [
+                    { oil: "芹菜籽", latin: "Apium graveolens", pct: "5%" }
+                ]
+            },
+            {
+                name: "環十五內酯 (Pentadecanolide)",
+                enName: "Pentadecanolide",
+                family: "內酯類",
+                subFamily: "大環內酯",
+                class: "family-lactones",
+                desc: "具有麝香氣味的大分子內酯。",
+                effects: ["定香劑", "免疫調節", "費洛蒙效應"],
+                caution: "",
+                sources: [
+                    { oil: "歐白芷根", latin: "Angelica archangelica", pct: "微量" }
+                ]
             },
             {
                 name: "香豆素 (Coumarins)",
@@ -947,7 +1054,7 @@
                 desc: "內酯類。",
                 effects: ["強力抗痙攣", "利尿、消水腫", "促進血液循環、強心", "鎮定、助眠", "降血壓", "具有清涼感，幫助退燒"],
                 caution: "🛡️ 無光敏性。",
-                sources: [] // 類別描述，無具體精油 (提及存在於Tarragon龍艾)
+                sources: [] 
             },
             {
                 name: "佛手柑內酯 (Bergapten)",
@@ -1006,13 +1113,11 @@
             }
 
             data.forEach(item => {
-                // Determine CSS class based on family mapping (simple logic)
+                // Determine CSS class based on family mapping
                 let borderClass = 'border-l-4 border-gray-400';
                 if (item.class) {
-                    // Use pre-defined class if available (from previous object structure)
                      borderClass = item.class;
                 } else {
-                    // Fallback logic
                     if(item.family.includes('萜烯')) borderClass = 'family-terpenes';
                     else if(item.family.includes('醇')) borderClass = 'family-alcohols';
                     else if(item.family.includes('酚')) borderClass = 'family-phenols';
