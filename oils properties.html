@@ -8,6 +8,23 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; }
         .category-btn.active { background-color: #10b981; color: white; border-color: #10b981; }
+        
+        /* 隱藏橫向捲軸但保持可捲動，讓畫面更乾淨 */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        
+        /* 避免拖曳時選取到文字 */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased">
@@ -15,25 +32,29 @@
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
         <div class="max-w-5xl mx-auto px-4 py-4">
-            <a href="index.html" class="flex items-center justify-center w-9 h-9 bg-slate-800 rounded-lg border border-slate-700 hover:bg-slate-700 hover:border-emerald-500 transition-all text-slate-300 hover:text-white" title="返回主目錄">
+            <!-- 頂部標題與返回按鈕 -->
+            <div class="relative flex items-center justify-center">
+                <a href="index.html" class="absolute left-0 flex items-center justify-center w-9 h-9 bg-slate-800 rounded-lg border border-slate-700 hover:bg-slate-700 hover:border-emerald-500 transition-all text-slate-300 hover:text-white" title="返回主目錄">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            </a>
-            
-            <h1 class="text-2xl font-bold text-emerald-600 text-center">🌿 精油功效分類指南</h1>
-            
-            <!-- Search Bar -->
-            <div class="mt-4 max-w-md mx-auto relative">
-                <input type="text" id="search-input" placeholder="搜尋精油名稱或治療功效 (如: 失眠, 頭痛)..." 
-                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm">
-                <!-- Search Icon -->
-                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+                </a>
+                <h1 class="text-2xl font-bold text-emerald-600 text-center">🌿 精油功效分類指南</h1>
             </div>
+            
+            <div class="mt-4">
+                <!-- Search Bar -->
+                <div class="max-w-md mx-auto relative">
+                    <input type="text" id="search-input" placeholder="搜尋精油名稱或治療功效 (如: 失眠, 頭痛)..." 
+                           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm">
+                    <!-- Search Icon -->
+                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
 
-            <!-- Categories Container -->
-            <div class="mt-4 flex flex-wrap gap-2 pb-2 justify-center" id="category-container">
-                <!-- Categories will be injected here by JS -->
+                <!-- Categories Container (加入 cursor-grab 提示可拖曳) -->
+                <div class="mt-4 flex gap-2 pb-2 overflow-x-auto scrollbar-hide cursor-grab no-select" id="category-container">
+                    <!-- Categories will be injected here by JS -->
+                </div>
             </div>
         </div>
     </header>
@@ -59,7 +80,7 @@
             "免疫、抗菌與感染"
         ];
 
-        // 2. 整理並歸類精油資料
+        // 2. 整理並歸類精油資料 (資料保持不變)
         const oilsData = [
             { name: "檸檬尤加利", effects: ["止痛", "肌肉關節僵硬; 修復韌帶", "消炎", "驅蟲", "抗真菌"], categories: ["肌肉、骨骼與關節", "免疫、抗菌與感染", "皮膚、傷口與美容"] },
             { name: "藍膠尤加利", effects: ["強效抗菌", "對呼吸系統疾病有效", "袪痰溶黏"], categories: ["呼吸系統", "免疫、抗菌與感染"] },
@@ -134,7 +155,7 @@
         ];
 
         let currentCategory = "全部";
-        let searchQuery = ""; // 新增：搜尋關鍵字狀態
+        let searchQuery = ""; 
 
         // 3. 渲染分類按鈕
         function renderCategories() {
@@ -144,27 +165,32 @@
             CATEGORIES.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.innerText = cat;
-                btn.className = `category-btn px-4 py-2 rounded-full border border-gray-300 text-sm font-medium transition-colors duration-200 ${cat === currentCategory ? 'active' : 'bg-white text-gray-600 hover:bg-gray-50'}`;
-                btn.onclick = () => {
+                btn.className = `category-btn flex-shrink-0 px-4 py-2 rounded-full border border-gray-300 text-sm font-medium transition-colors duration-200 ${cat === currentCategory ? 'active' : 'bg-white text-gray-600 hover:bg-gray-50'}`;
+                
+                // 點擊事件 (加入判斷，如果是拖曳就不觸發點擊)
+                btn.onclick = (e) => {
+                    if (isDragging) {
+                        e.preventDefault();
+                        return;
+                    }
                     currentCategory = cat;
                     renderCategories();
                     renderOils();
+                    
+                    // 點擊後讓按鈕自動捲動到可視範圍內
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 };
                 container.appendChild(btn);
             });
         }
 
-        // 4. 渲染精油卡片 (加入搜尋過濾邏輯)
+        // 4. 渲染精油卡片
         function renderOils() {
             const container = document.getElementById('oils-grid');
             container.innerHTML = '';
 
-            // 同時根據「分類」和「搜尋關鍵字」進行篩選
             const filteredOils = oilsData.filter(oil => {
-                // 檢查是否符合當前分類
                 const matchCategory = currentCategory === "全部" || oil.categories.includes(currentCategory);
-                
-                // 檢查是否符合搜尋關鍵字 (精油名稱 或 任何一項治療功效)
                 const query = searchQuery.toLowerCase();
                 const matchSearch = query === "" || 
                                     oil.name.toLowerCase().includes(query) || 
@@ -173,7 +199,6 @@
                 return matchCategory && matchSearch;
             });
 
-            // 找不到資料時的提示
             if (filteredOils.length === 0) {
                 container.innerHTML = `<p class="text-gray-500 col-span-full text-center py-8">找不到符合條件的精油，請嘗試其他關鍵字或分類。</p>`;
                 return;
@@ -183,14 +208,11 @@
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow";
                 
-                // 標籤 HTML
                 const tagsHtml = oil.categories.map(cat => 
                     `<span class="inline-block bg-emerald-50 text-emerald-600 text-xs px-2 py-1 rounded-md mr-1 mb-1">${cat}</span>`
                 ).join('');
 
-                // 功效列表 HTML
                 const effectsHtml = oil.effects.map(effect => {
-                    // 簡單的高亮顯示搜尋關鍵字 (可選)
                     let displayEffect = effect;
                     if (searchQuery && effect.toLowerCase().includes(searchQuery.toLowerCase())) {
                         const regex = new RegExp(`(${searchQuery})`, 'gi');
@@ -199,7 +221,6 @@
                     return `<li class="text-sm text-gray-600 mb-1 pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-emerald-400">${displayEffect}</li>`;
                 }).join('');
 
-                // 標題也做高亮
                 let displayName = oil.name;
                 if (searchQuery && oil.name.toLowerCase().includes(searchQuery.toLowerCase())) {
                     const regex = new RegExp(`(${searchQuery})`, 'gi');
@@ -221,6 +242,51 @@
         document.getElementById('search-input').addEventListener('input', (e) => {
             searchQuery = e.target.value.trim();
             renderOils();
+        });
+
+        // 6. 實作滑鼠拖曳左右滑動功能
+        const slider = document.getElementById('category-container');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let isDragging = false; // 用來判斷是點擊還是拖曳
+
+        slider.addEventListener('mousedown', (e) => {
+            isDown = true;
+            isDragging = false;
+            slider.classList.add('cursor-grabbing');
+            slider.classList.remove('cursor-grab');
+            startX = e.pageX - slider.offsetLeft;
+            scrollLeft = slider.scrollLeft;
+        });
+
+        slider.addEventListener('mouseleave', () => {
+            isDown = false;
+            slider.classList.remove('cursor-grabbing');
+            slider.classList.add('cursor-grab');
+        });
+
+        slider.addEventListener('mouseup', () => {
+            isDown = false;
+            slider.classList.remove('cursor-grabbing');
+            slider.classList.add('cursor-grab');
+            // 延遲重置 isDragging，讓 click 事件可以先捕捉到狀態
+            setTimeout(() => { isDragging = false; }, 0);
+        });
+
+        slider.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            
+            const x = e.pageX - slider.offsetLeft;
+            const walk = (x - startX) * 1.5; // 1.5 是滑動速度倍率
+            
+            // 如果移動距離大於 3px，就視為拖曳而非點擊
+            if (Math.abs(walk) > 3) {
+                isDragging = true;
+            }
+            
+            slider.scrollLeft = scrollLeft - walk;
         });
 
         // 初始化
