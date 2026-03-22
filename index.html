@@ -1,13 +1,176 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>essential-oil-app</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精油溫習 - 導航主頁</title>
+    <!-- 引入 Tailwind CSS 讓樣式更美觀 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        /* 定義兩種不同顏色的卡片邊框/裝飾 */
+        .border-l-revision { border-left: 4px solid #10b981; } /* 綠色 */
+        .border-l-exam { border-left: 4px solid #f59e0b; } /* 橙色 */
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- 頁面標題區 (Header) -->
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="max-w-5xl mx-auto px-4 py-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+                    精油溫習導航
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">所有精油溫習資訊(包括溫習重點及測試題庫)</p>
+            </div>
+            <!-- Icon -->
+            <div class="p-2 bg-green-50 rounded-full">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="flex-grow max-w-5xl mx-auto px-4 py-10 w-full space-y-12">
+        
+        <!-- 第一部分：記憶/溫習模式 -->
+        <section>
+            <!-- 標題區塊修改：改用 items-start 並加入描述文字 -->
+            <div class="flex items-start mb-6">
+                <div class="w-1 h-8 bg-green-500 rounded mr-3 mt-1"></div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">
+                        記憶/溫習模式
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        包含所有精油、功能、化學成分及植物科屬等記憶圖。
+                    </p>
+                </div>
+            </div>
+            <div id="revision-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <!-- JS 自動填充 -->
+            </div>
+        </section>
+
+        <!-- 第二部分：考試答題模式 -->
+        <section>
+            <!-- 標題區塊修改：改用 items-start 並加入描述文字 -->
+            <div class="flex items-start mb-6">
+                <div class="w-1 h-8 bg-amber-500 rounded mr-3 mt-1"></div>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">
+                        答題模式
+                    </h2>
+                    <p class="text-sm text-gray-500 mt-1">
+                        不同類型的測驗題庫（如拉丁學名背誦）
+                    </p>
+                </div>
+            </div>
+            <div id="exam-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <!-- JS 自動填充 -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-white border-t mt-10 py-8">
+        <div class="text-center text-gray-400 text-sm">
+            &copy; 2024 Essential Oils Memory Map.
+        </div>
+    </footer>
+
+    <!-- JavaScript 設定區 -->
+    <script>
+        // ==========================================
+        // CONFIGURATION 設定區
+        // ==========================================
+        
+        // 1. 記憶/溫習模式的連結
+        const revisionPages = [
+            { 
+                file: 'Quick Reference of Essential Oil Chemical Composition.html', 
+                title: '精油化學成分速查', 
+                desc: '精油化學成分(細類)、所屬功能及所有所屬精油記憶圖表' 
+            },
+            { 
+                file: 'essential oils plant family memory map.html', 
+                title: '植物科屬功能精油記憶卡', 
+                desc: '植物科屬、功能及其所有所屬精油記憶圖表' 
+            },
+            { 
+                file: 'essential oil memory card.html', 
+                title: '精油記憶卡', 
+                desc: '所有精油全資料記憶卡(包括科屬、化學成分、功能及禁忌等等)' 
+            },
+            { 
+                file: 'essential oil chemical mindmap.html', 
+                title: '精油化學成分mindmap', 
+                desc: '精油化學成分(大類)列表' 
+            },
+            {
+            file: 'oils properties.html',
+            title: '精油功效分類指南',
+            desc: '所有精油的功效分類指南'
+            },
+        ];
+
+        // 2. 考試答題模式的連結
+        const examPages = [
+            { 
+                file: 'essential oil latin name test.html', 
+                title: '精油拉丁學名背誦', 
+                desc: '測試對精油拉丁學名的記憶' 
+            },
+        ];
+
+        // ==========================================
+        // 程式邏輯 (自動生成卡片)
+        // ==========================================
+        
+        // 通用渲染函數
+        function renderCards(containerId, data, type) {
+            const container = document.getElementById(containerId);
+            const iconColorClass = type === 'exam' ? 'text-amber-500' : 'text-green-500';
+            const hoverTextClass = type === 'exam' ? 'group-hover:text-amber-600' : 'group-hover:text-green-600';
+            const iconBgClass = type === 'exam' ? 'bg-amber-50' : 'bg-green-50';
+
+            data.forEach(page => {
+                const linkHtml = `
+                    <a href="${page.file}" class="block bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 card-hover group relative overflow-hidden">
+                        
+                        <!-- 頂部 Icon 與標題 -->
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="p-3 rounded-lg ${iconBgClass} ${iconColorClass}">
+                                ${type === 'exam' 
+                                    ? '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>' 
+                                    : '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>'
+                                }
+                            </div>
+                            <!-- 箭頭 Icon -->
+                            <svg class="w-5 h-5 text-gray-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+
+                        <h3 class="text-lg font-bold text-gray-800 ${hoverTextClass} transition-colors mb-2">${page.title}</h3>
+                        <p class="text-gray-500 text-sm leading-relaxed">${page.desc}</p>
+                    </a>
+                `;
+                container.innerHTML += linkHtml;
+            });
+        }
+
+        // 執行渲染
+        renderCards('revision-grid', revisionPages, 'revision');
+        renderCards('exam-grid', examPages, 'exam');
+
+    </script>
+</body>
 </html>

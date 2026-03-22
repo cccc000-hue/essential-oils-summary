@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>植物科屬功能精油記憶卡</title>
+    <style>
+        :root {
+            --primary: #6b4c9a;
+            --bg: #f5f5f7;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --tag-bg: #f3f0f7;
+            --border-color: #e0e0e0;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh; /* 滿屏高度 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* 防止整個頁面滾動 */
+        }
+
+        /* 頂部導航 */
+        header { 
+            padding: 12px 16px; 
+            background: var(--card-bg); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+            z-index: 20;
+            gap: 10px; /* 增加間距 */
+        }
+
+        /* 新增：標題左側容器 (包含按鈕與標題) */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden; /* 防止標題過長撐開 */
+        }
+
+        /* 新增：返回首頁按鈕樣式 */
+        .home-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background-color: var(--tag-bg);
+            color: var(--primary);
+            border-radius: 8px;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .home-btn:active {
+            background-color: #e0dce6;
+        }
+
+        h1 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            color: var(--primary); 
+            margin: 0; 
+            white-space: nowrap; /* 不換行 */
+            overflow: hidden;
+            text-overflow: ellipsis; /* 過長顯示... */
+        }
+
+        .counter { 
+            background: var(--tag-bg); 
+            color: var(--primary); 
+            padding: 4px 10px; 
+            border-radius: 12px; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            flex-shrink: 0;
+        }
+
+        /* 搜尋區 */
+        .search-container { 
+            padding: 10px 16px; 
+            background: var(--bg); 
+            flex-shrink: 0;
+        }
+        .search-input-wrapper { position: relative; }
+        .search-input { 
+            width: 100%; 
+            padding: 10px 35px 10px 12px; 
+            border-radius: 10px; 
+            border: 1px solid #ddd; 
+            font-size: 0.95rem; 
+            outline: none; 
+            background: white;
+        }
+        .search-input:focus { border-color: var(--primary); }
+        .clear-btn { 
+            position: absolute; 
+            right: 0; top: 0; bottom: 0;
+            width: 35px; 
+            background: none; 
+            border: none; 
+            font-size: 1.1rem; 
+            color: #999; 
+            display: none;
+            cursor: pointer;
+        }
+
+        /* 主要內容區 (卡片) */
+        .main-area { 
+            flex: 1; 
+            margin: 0 16px 16px; 
+            position: relative; 
+            min-height: 0; /* 重要：讓 flex item 可以縮小 */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card { 
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 卡片頭部 (固定) */
+        .card-header {
+            padding: 20px;
+            background: linear-gradient(to bottom, #fff, #fcfcfc);
+            border-bottom: 1px solid #f0f0f0;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .card-cn { font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+        .card-en { font-size: 1rem; color: #888; font-style: italic; font-family: serif; }
+
+        /* 卡片內容 (可滾動) */
+        .card-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+        }
+
+        .section { margin-bottom: 25px; }
+        .section-title { 
+            font-size: 0.9rem; 
+            font-weight: 700; 
+            color: #999; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background: var(--primary);
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+
+        /* 列表樣式 */
+        ul { padding-left: 5px; list-style: none; }
+        li { margin-bottom: 8px; font-size: 1rem; line-height: 1.6; color: #444; }
+        
+        /* 精油標籤 */
+        .oil-item { margin-bottom: 8px; }
+        .oil-name {
+            font-weight: 600;
+            color: #2c3e50;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .latin-oil {
+            font-style: italic;
+            font-size: 0.9rem;
+            color: #666;
+            margin-left: 4px;
+        }
+
+        /* 底部按鈕區 */
+        .controls { 
+            padding: 0 16px 20px; 
+            display: flex; 
+            gap: 15px; 
+            flex-shrink: 0;
+        }
+        .btn { 
+            border: none; 
+            padding: 15px; 
+            border-radius: 12px; 
+            font-size: 1rem; 
+            font-weight: 600; 
+            flex: 1; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            background: white; 
+            border: 1px solid #ddd; 
+            color: var(--text-main);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .btn:active { background: #f0f0f0; transform: scale(0.98); }
+        .btn-primary { 
+            background: var(--primary); 
+            color: white; 
+            border: none;
+            box-shadow: 0 4px 10px rgba(107, 76, 154, 0.3);
+        }
+
+        /* 無結果 */
+        .no-results { 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100%; 
+            color: #999; 
+        }
+
+        @media (max-width: 600px) {
+            .card-cn { font-size: 1.6rem; }
+            .latin-oil { display: block; margin-left: 0; margin-top: 2px; font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- 修改處：加入 header-left 包含按鈕與標題 -->
+        <div class="header-left">
+            <!-- 返回主頁按鈕 (連結設為 index.html) -->
+            <a href="index.html" class="home-btn" aria-label="返回主目錄">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </a>
+            <h1>植物科屬功能精油記憶卡</h1>
+        </div>
+        <div class="counter" id="counter">Loading...</div>
+    </header>
+
+    <div class="search-container">
+        <div class="search-input-wrapper">
+            <input type="text" class="search-input" id="searchInput" placeholder="搜尋科屬、精油、功效...">
+            <button class="clear-btn" id="clearBtn">✕</button>
+        </div>
+    </div>
+
+    <div class="main-area">
+        <div class="no-results" id="noResults">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🔍</div>
+            <p>找不到相關資料</p>
+        </div>
+
+        <div class="card" id="card">
+            <!-- 上半部：標題 -->
+            <div class="card-header">
+                <div class="card-cn" id="cardCn"></div>
+                <div class="card-en" id="cardEn"></div>
+            </div>
+
+            <!-- 下半部：內容 (可滑動) -->
+            <div class="card-body">
+                <div class="section">
+                    <div class="section-title">代表精油</div>
+                    <div id="cardOils"></div>
+                </div>
+                <div class="section">
+                    <div class="section-title">主要功能</div>
+                    <div id="cardFuncs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="prevBtn">← 上一張</button>
+        <button class="btn btn-primary" id="nextBtn">下一張 →</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 資料庫 (與之前相同)
+            var familyData = [
+                {
+                    cn: "番荔枝科",
+                    latin: "Annonaceae",
+                    oils: `<ul><li><span class="oil-name">依蘭依蘭 Ylang Ylang</span> <span class="latin-oil">(Cananga odorata)</span></li></ul>`,
+                    func: `<ul><li>平伏 (Soothing)</li><li>平衡 (Balancing)</li><li>平靜 (Calming)</li></ul>`
+                },
+                {
+                    cn: "橄欖科",
+                    latin: "Burseraceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">乳香 Frankincense</span> <span class="latin-oil">(Boswellia carteri)</span></li>
+                        <li><span class="oil-name">印度乳香 Indian Frankincense</span> <span class="latin-oil">(Boswellia serrata)</span></li>
+                        <li><span class="oil-name">欖香脂 Elemi</span> <span class="latin-oil">(Canarium luzonicum)</span></li>
+                        <li><span class="oil-name">沒藥 Myrrh</span> <span class="latin-oil">(Commiphora myrrha)</span></li>
+                        <li><span class="oil-name">秘魯聖木 Palo Santo</span> <span class="latin-oil">(Bursera graveolens)</span></li>
+                    </ul>`,
+                    func: `<ul><li>化痰</li><li>促進傷口癒合及潰瘍</li><li>減少疤痕組織</li><li>具有酸類，親膚性強</li><li>護膚抗皺</li><li>促進血液循環，活血化瘀</li><li>強效抗菌消炎</li></ul>`
+                },
+                {
+                    cn: "半日花科",
+                    latin: "Cistaceae",
+                    oils: `<ul><li><span class="oil-name">岩玫瑰 Cistus</span> <span class="latin-oil">(Cistus ladaniferus)</span></li></ul>`,
+                    func: `<ul><li>促進傷口癒合</li><li>止血</li><li>提升免疫力</li><li>抗病毒</li></ul>`
+                },
+                {
+                    cn: "菊科",
+                    latin: "Compositae / Asteraceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">德國洋甘菊 Chamomile German</span> <span class="latin-oil">(Matricaria chamomilla)</span></li>
+                        <li><span class="oil-name">羅馬洋甘菊 Chamomile Roman</span> <span class="latin-oil">(Anthemis nobilis)</span></li>
+                        <li><span class="oil-name">永久花 Immortelle</span> <span class="latin-oil">(Helichrysum italicum)</span></li>
+                        <li><span class="oil-name">萬壽菊 Tagetes</span> <span class="latin-oil">(Tagetes minuta)</span></li>
+                        <li><span class="oil-name">蓍草 Yarrow</span> <span class="latin-oil">(Achillea millefolium)</span></li>
+                        <li><span class="oil-name">龍艾 Tarragon</span> <span class="latin-oil">(Artemisia dracunculus)</span></li>
+                        <li><span class="oil-name">艾草 Mugwort</span> <span class="latin-oil">(Artemisia vulgaris)</span></li>
+                        <li><span class="oil-name">摩洛哥藍艾菊 Blue Tansy</span> <span class="latin-oil">(Tanacetum annuum)</span></li>
+                        <li><span class="oil-name">土木香 Elecampane</span> <span class="latin-oil">(Inula graveolens)</span></li>
+                        <li><span class="oil-name">一枝黃花 Gold Rod</span> <span class="latin-oil">(Solidago canadensis)</span></li>
+                    </ul>`,
+                    func: `<ul><li>殺菌</li><li>平靜</li><li>抗過敏性</li><li>抗真菌</li><li>抗感染</li><li>消化不良</li><li>發炎</li><li>失眠、壓力</li><li>*某些具酮類要小心用量</li></ul>`
+                },
+                {
+                    cn: "柏科",
+                    latin: "Coniferae / Cupressaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">絲柏 Cypress</span> <span class="latin-oil">(Cupressus sempervirens)</span></li>
+                        <li><span class="oil-name">杜松 Juniper</span> <span class="latin-oil">(Juniperus communis)</span></li>
+                        <li><span class="oil-name">杜松果 Juniper Berry</span> <span class="latin-oil">(Juniperus communis)</span></li>
+                        <li><span class="oil-name">維吉尼亞雪松 Cedarwood Virginian</span> <span class="latin-oil">(Juniperus virginiana)</span></li>
+                        <li><span class="oil-name">藍絲柏 Blue Cypress</span> <span class="latin-oil">(Callitris intratropica)</span></li>
+                        <li><span class="oil-name">圓柏 Savin</span> <span class="latin-oil">(Juniperus sabina)</span></li>
+                    </ul>`,
+                    func: `<ul><li>抗真菌、抗感染</li><li>殺菌</li><li>黏液溶解</li><li>呼吸系統消毒</li><li>消除水腫、排毒</li><li>促進循環，有助腎臟淨化</li><li>*但用量過高是會刺激腎臟</li><li>具有收斂特性，可以收緊毛孔</li></ul>`
+                },
+                {
+                    cn: "牻牛兒苗科",
+                    latin: "Geraniaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">天竺葵 Geranium</span> <span class="latin-oil">(Pelargonium graveolens)</span></li>
+                        <li><span class="oil-name">玫瑰天竺葵 Rose Geranium</span> <span class="latin-oil">(Pelargonium roseum)</span></li>
+                        <li><span class="oil-name">大根老鸛草 True Geranium</span> <span class="latin-oil">(Geranium macrorrhizum)</span></li>
+                    </ul>`,
+                    func: `<ul><li>抗紅腫發炎</li><li>殺菌</li><li>抗毒素</li><li>滋補神經</li><li>平伏</li><li>洗淨及冷卻皮膚</li></ul>`
+                },
+                {
+                    cn: "唇形科",
+                    latin: "Labiatae / Lamiaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">羅勒 Basil</span> <span class="latin-oil">(Ocimum basilicum)</span></li>
+                        <li><span class="oil-name">快樂鼠尾草 Clary Sage</span> <span class="latin-oil">(Salvia sclarea)</span></li>
+                        <li><span class="oil-name">高地牛膝草 Mountain Hyssop</span> <span class="latin-oil">(Hyssopus decumbens)</span></li>
+                        <li><span class="oil-name">薰衣草 Lavender</span> <span class="latin-oil">(Lavandula angustifolia)</span></li>
+                        <li><span class="oil-name">醒目薰衣草 Lavandin</span> <span class="latin-oil">(Lavandula x intermedia)</span></li>
+                        <li><span class="oil-name">香蜂草 Melissa</span> <span class="latin-oil">(Melissa officinalis)</span></li>
+                        <li><span class="oil-name">甜橙薄荷 Orange Mint</span> <span class="latin-oil">(Mentha x citrata)</span></li>
+                        <li><span class="oil-name">胡椒薄荷 Peppermint</span> <span class="latin-oil">(Mentha x piperita)</span></li>
+                        <li><span class="oil-name">迷迭香 Rosemary</span> <span class="latin-oil">(Salvia rosmarinus)</span></li>
+                        <li><span class="oil-name">鼠尾草 Sage</span> <span class="latin-oil">(Salvia officinalis)</span></li>
+                        <li><span class="oil-name">甜馬鬱蘭 Sweet Marjoram</span> <span class="latin-oil">(Origanum majorana)</span></li>
+                        <li><span class="oil-name">百里香 Thyme</span> <span class="latin-oil">(Thymus vulgaris)</span></li>
+                        <li><span class="oil-name">廣藿香 Patchouli</span> <span class="latin-oil">(Pogostemon cablin)</span></li>
+                    </ul>`,
+                    func: `<ul><li>殺菌、止痛</li><li>抗紅腫發炎</li><li>治痙攣</li><li>通經</li><li>促進排汗</li><li>呼吸系統</li><li>防病毒</li><li>平衡</li><li>芳香</li></ul>`
+                },
+                {
+                    cn: "樟科",
+                    latin: "Lauraceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">羅文莎葉 Ravensara</span> <span class="latin-oil">(Ravensara aromatica)</span></li>
+                        <li><span class="oil-name">樟腦 Camphor</span> <span class="latin-oil">(Cinnamomum camphora)</span></li>
+                        <li><span class="oil-name">月桂 Bay Laurel</span> <span class="latin-oil">(Laurus nobilis)</span></li>
+                        <li><span class="oil-name">肉桂葉 Cinnamon leaf</span> <span class="latin-oil">(Cinnamomum zeylanicum)</span></li>
+                        <li><span class="oil-name">錫蘭肉桂皮 Cinnamon bark</span> <span class="latin-oil">(Cinnamomum verum)</span></li>
+                        <li><span class="oil-name">花梨木 Rosewood</span> <span class="latin-oil">(Aniba rosaeodora)</span></li>
+                        <li><span class="oil-name">芳樟/葉 Ho wood/leaf</span> <span class="latin-oil">(Cinnamomum camphora ct linalool)</span></li>
+                        <li><span class="oil-name">山雞椒 May Chang</span> <span class="latin-oil">(Litsea cubeba)</span></li>
+                        <li><span class="oil-name">桉油樟 Ravintsara</span> <span class="latin-oil">(Cinnamomum camphora ct 1.8 cineole)</span></li>
+                    </ul>`,
+                    func: `<ul><li>抗真菌</li><li>殺菌效力強勁，快速見效</li><li>抗病毒</li><li>提升免疫力</li></ul>`
+                },
+                {
+                    cn: "肉豆蔻科",
+                    latin: "Myristicaceae",
+                    oils: `<ul><li><span class="oil-name">肉豆蔻 Nutmeg</span> <span class="latin-oil">(Myristica fragrans)</span></li></ul>`,
+                    func: `<ul><li>止痛</li><li>幫助減輕肌肉疼痛及痛楚</li><li>強力大腦刺激劑</li></ul>`
+                },
+                {
+                    cn: "桃金孃科",
+                    latin: "Myrtaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">西印度月桂 Bay</span> <span class="latin-oil">(Pimenta racemosa)</span></li>
+                        <li><span class="oil-name">丁香 Clove</span> <span class="latin-oil">(Eugenia caryophyllata)</span></li>
+                        <li><span class="oil-name">尤加利 Eucalyptus</span> <span class="latin-oil">(Eucalyptus staigeriana, dives, smithii, globulus, radiata, citriodora)</span></li>
+                        <li><span class="oil-name">綠花白千層 Niaouli</span> <span class="latin-oil">(Melaleuca viridiflora)</span></li>
+                        <li><span class="oil-name">香桃木 Myrtle</span> <span class="latin-oil">(Myrtus communis)</span></li>
+                        <li><span class="oil-name">茶樹 Tea tree</span> <span class="latin-oil">(Melaleuca alternifolia)</span></li>
+                        <li><span class="oil-name">松紅梅 Manuka</span> <span class="latin-oil">(Leptospermum scoparium)</span></li>
+                    </ul>`,
+                    func: `<ul><li>高度殺菌</li><li>抗病毒</li><li>滋補及刺激激勵</li><li>呼吸系統</li><li>黏液溶解</li><li>有助支氣管擴張</li><li>*由於含有高量的氧化物及醛類，可能會引起皮膚刺激</li><li>適用於肌肉及關節痛症</li></ul>`
+                },
+                {
+                    cn: "木犀科",
+                    latin: "Oleaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">茉莉 Jasmine</span> <span class="latin-oil">(Jasminum sambac / officinale)</span></li>
+                        <li><span class="oil-name">桂花 Osmanthus</span> <span class="latin-oil">(Osmanthus fragrans)</span></li>
+                    </ul>`,
+                    func: `<ul><li>抗憂鬱</li><li>抗紅腫發炎</li><li>驅風</li><li>鎮靜</li></ul>`
+                },
+                {
+                    cn: "松科",
+                    latin: "Pinaceae / Abietaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">大西洋雪松 Cedarwood Atlas</span> <span class="latin-oil">(Cedrus atlantica)</span></li>
+                        <li><span class="oil-name">歐洲赤松 Pine</span> <span class="latin-oil">(Pinus sylvestris)</span></li>
+                        <li><span class="oil-name">膠冷杉 Fir</span> <span class="latin-oil">(Abies balsamea)</span></li>
+                        <li><span class="oil-name">黑雲杉 Black Spruce</span> <span class="latin-oil">(Picea mariana)</span></li>
+                    </ul>`,
+                    func: `<ul><li>高度殺菌</li><li>黏膜炎</li><li>提升腎上腺素</li><li>緩和呼吸道發炎</li><li>處理關節炎</li></ul>`
+                },
+                {
+                    cn: "胡椒科",
+                    latin: "Piperaceae",
+                    oils: `<ul><li><span class="oil-name">黑胡椒 Black Pepper</span> <span class="latin-oil">(Piper nigrum)</span></li></ul>`,
+                    func: `<ul><li>抗黏膜炎</li><li>循環系統及消化系統的刺激劑</li><li>止痛</li><li>化痰</li></ul>`
+                },
+                {
+                    cn: "禾本科",
+                    latin: "Poaceae / Gramineae",
+                    oils: `<ul>
+                        <li><span class="oil-name">香茅 Citronella</span> <span class="latin-oil">(Cymbopogon nardus)</span></li>
+                        <li><span class="oil-name">檸檬香茅 Lemongrass</span> <span class="latin-oil">(Cymbopogon citratus)</span></li>
+                        <li><span class="oil-name">玫瑰草 Palmarosa</span> <span class="latin-oil">(Cymbopogon martini)</span></li>
+                        <li><span class="oil-name">岩蘭草 Vetiver</span> <span class="latin-oil">(Vetiveria zizanioides)</span></li>
+                    </ul>`,
+                    func: `<ul><li>痤瘡</li><li>疼痛及痛楚</li><li>促進血液循環</li><li>循環系統的刺激劑</li></ul>`
+                },
+                {
+                    cn: "薔薇科",
+                    latin: "Rosaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">大馬士革玫瑰 Rose</span> <span class="latin-oil">(Rosa damascena)</span></li>
+                        <li><span class="oil-name">白玫瑰 Rose Blossom white</span> <span class="latin-oil">(Rosa alba)</span></li>
+                        <li><span class="oil-name">香精玫瑰 Rose</span> <span class="latin-oil">(Rosa centifolia)</span></li>
+                    </ul>`,
+                    func: `<ul><li>殺菌</li><li>抗病毒</li><li>抗紅腫發炎</li><li>抗真菌</li><li>平衡荷爾蒙</li><li>對皮膚有益</li></ul>`
+                },
+                {
+                    cn: "芸香科",
+                    latin: "Rutaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">佛手柑 Bergamot</span> <span class="latin-oil">(Citrus bergamia)</span></li>
+                        <li><span class="oil-name">葡萄柚 Grapefruit</span> <span class="latin-oil">(Citrus paradisi)</span></li>
+                        <li><span class="oil-name">檸檬 Lemon</span> <span class="latin-oil">(Citrus limonum)</span></li>
+                        <li><span class="oil-name">蜜橘 Mandarin</span> <span class="latin-oil">(Citrus reticulata)</span></li>
+                        <li><span class="oil-name">橙花 Neroli</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
+                        <li><span class="oil-name">苦橙 Orange bitter</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
+                        <li><span class="oil-name">甜橙 Orange sweet</span> <span class="latin-oil">(Citrus sinensis)</span></li>
+                        <li><span class="oil-name">苦橙葉 Petitgrain</span> <span class="latin-oil">(Citrus aurantium var. amara)</span></li>
+                        <li><span class="oil-name">阿米香樹/西印度檀香 Amyris</span> <span class="latin-oil">(Amyris balsamifera)</span></li>
+                    </ul>`,
+                    func: `<ul><li>對消化系統有平衡及刺激作用</li><li>殺菌</li><li>鎮靜神經</li><li>精神大振</li><li>抗病毒</li></ul>`
+                },
+                {
+                    cn: "檀香科",
+                    latin: "Santalaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">檀香/東印度檀香 Sandalwood</span> <span class="latin-oil">(Santalum album)</span></li>
+                        <li><span class="oil-name">澳洲檀香 Sandalwood, Australia</span> <span class="latin-oil">(Santalum spicatum)</span></li>
+                    </ul>`,
+                    func: `<ul><li>平衡神經系統</li><li>呼吸系統及排泄系統</li><li>乾燥皮膚</li><li>用溶劑式提煉</li><li>調節賀爾蒙</li></ul>`
+                },
+                {
+                    cn: "安息香科",
+                    latin: "Styracaceae",
+                    oils: `<ul><li><span class="oil-name">安息香 Benzoin</span> <span class="latin-oil">(Styrax benzoin)</span></li></ul>`,
+                    func: `<ul><li>抗黏膜炎</li><li>化痰</li><li>皮膚治療</li><li>關節痛楚</li><li>循環不佳</li></ul>`
+                },
+                {
+                    cn: "繖形科",
+                    latin: "Umbelliferae / Apiaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">歐白芷 Angelica</span> <span class="latin-oil">(Angelica archangelica)</span></li>
+                        <li><span class="oil-name">胡蘿蔔籽 Carrot Seed</span> <span class="latin-oil">(Daucus carota)</span></li>
+                        <li><span class="oil-name">甜茴香 Fennel Sweet</span> <span class="latin-oil">(Foeniculum vulgare)</span></li>
+                        <li><span class="oil-name">歐芹 Parsley</span> <span class="latin-oil">(Petroselinum crispum)</span></li>
+                        <li><span class="oil-name">芹菜籽 Celery Seed</span> <span class="latin-oil">(Apium graveolens)</span></li>
+                    </ul>`,
+                    func: `<ul><li>幫助消化</li><li>分解脂肪</li><li>刺激膽汁流動</li><li>暖身</li><li>刺激</li><li>驅風</li><li>抗細菌</li><li>殺菌</li><li>治痙攣</li><li>抗紅腫發炎</li><li>通經</li><li>滋補劑</li></ul>`
+                },
+                {
+                    cn: "敗醬草科",
+                    latin: "Valerianaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">穗甘松 Spikenard</span> <span class="latin-oil">(Nardostachys jatamansi)</span></li>
+                        <li><span class="oil-name">纈草 Valerian</span> <span class="latin-oil">(Valeriana officinalis)</span></li>
+                        <li><span class="oil-name">印度纈草 Valerian (Tagar)</span> <span class="latin-oil">(Valeriana wallichi)</span></li>
+                    </ul>`,
+                    func: `<ul><li>對神經系統有安神作用</li><li>治療神經痛症</li></ul>`
+                },
+                {
+                    cn: "薑科",
+                    latin: "Zingiberaceae",
+                    oils: `<ul>
+                        <li><span class="oil-name">小荳蔻 Cardamom</span> <span class="latin-oil">(Elettaria cardamomum)</span></li>
+                        <li><span class="oil-name">薑 Ginger</span> <span class="latin-oil">(Zingiber officinale)</span></li>
+                    </ul>`,
+                    func: `<ul><li>消化系統滋補劑</li><li>抗黏膜炎</li><li>對肌肉系統有和暖作用</li><li>止痛，尤其是牙痛</li></ul>`
+                }
+            ];
+
+            // --- 變數 ---
+            var currentIndex = 0;
+            var filteredData = familyData.slice();
+
+            // --- 元素 ---
+            var card = document.getElementById('card');
+            var prevBtn = document.getElementById('prevBtn');
+            var nextBtn = document.getElementById('nextBtn');
+            var searchInput = document.getElementById('searchInput');
+            var clearBtn = document.getElementById('clearBtn');
+            var counter = document.getElementById('counter');
+            var noResults = document.getElementById('noResults');
+
+            // --- 核心功能 ---
+            function renderCard() {
+                if (filteredData.length === 0) {
+                    card.style.display = 'none';
+                    noResults.style.display = 'flex';
+                    counter.innerText = "0 / 0";
+                    return;
+                }
+
+                card.style.display = 'flex';
+                noResults.style.display = 'none';
+                
+                var data = filteredData[currentIndex];
+                counter.innerText = (currentIndex + 1) + " / " + filteredData.length;
+
+                // 填充內容
+                document.getElementById('cardCn').innerText = data.cn;
+                document.getElementById('cardEn').innerText = data.latin;
+                document.getElementById('cardOils').innerHTML = data.oils;
+                document.getElementById('cardFuncs').innerHTML = data.func;
+                
+                // 每次切換時，將內容捲動回最上方
+                document.querySelector('.card-body').scrollTop = 0;
+            }
+
+            function handleNext() {
+                currentIndex++;
+                if (currentIndex >= filteredData.length) currentIndex = 0;
+                renderCard();
+            }
+
+            function handlePrev() {
+                currentIndex--;
+                if (currentIndex < 0) currentIndex = filteredData.length - 1;
+                renderCard();
+            }
+
+            function handleSearch() {
+                var query = searchInput.value.toLowerCase().trim();
+                if (query.length > 0) {
+                    clearBtn.style.display = 'block';
+                    filteredData = [];
+                    for (var i = 0; i < familyData.length; i++) {
+                        var item = familyData[i];
+                        if (
+                            (item.cn && item.cn.indexOf(query) > -1) ||
+                            (item.latin && item.latin.toLowerCase().indexOf(query) > -1) ||
+                            (item.oils && item.oils.toLowerCase().indexOf(query) > -1) ||
+                            (item.func && item.func.toLowerCase().indexOf(query) > -1)
+                        ) {
+                            filteredData.push(item);
+                        }
+                    }
+                } else {
+                    clearBtn.style.display = 'none';
+                    filteredData = familyData.slice();
+                }
+                currentIndex = 0;
+                renderCard();
+            }
+
+            function clearSearch() {
+                searchInput.value = '';
+                handleSearch();
+            }
+
+            // --- 綁定事件 ---
+            if (nextBtn) nextBtn.onclick = handleNext;
+            if (prevBtn) prevBtn.onclick = handlePrev;
+            if (searchInput) searchInput.oninput = handleSearch;
+            if (clearBtn) clearBtn.onclick = clearSearch;
+
+            // --- 啟動 ---
+            renderCard();
+        });
+    </script>
+</body>
+</html>
