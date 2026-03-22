@@ -55,10 +55,37 @@
         .caution-safe { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
         .caution-warn { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 
-        @media (max-width: 768px) {
+        /* ===== Responsive: Desktop = table, Mobile = cards ===== */
+        #desktopTable { display: block; }
+        #mobileCards { display: none; }
+
+        @media (max-width: 767px) {
+            #desktopTable { display: none !important; }
+            #mobileCards { display: block !important; }
+            .filter-scroll-mobile { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; scrollbar-width: none; }
+            .filter-scroll-mobile::-webkit-scrollbar { display: none; }
+            .filter-scroll-mobile .filter-btn { flex-shrink: 0; }
+        }
+
+        @media (min-width: 768px) {
+            .hide-mobile { display: table-cell; }
+        }
+        @media (max-width: 767px) {
             .hide-mobile { display: none; }
             .table-container { font-size: 0.8rem; }
         }
+
+        /* Mobile card styles */
+        .mob-card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; transition: box-shadow 0.15s; }
+        .mob-card:active { box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
+        .mob-card-head { padding: 12px 14px; cursor: pointer; }
+        .mob-card-detail { display: none; padding: 0 14px 14px; border-top: 1px solid #f3f4f6; }
+        .mob-card-detail.open { display: block; }
+        .mob-card.active-card .mob-card-head { background: #f0fdf4; }
+
+        .mob-src-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: 8px; font-size: 0.8rem; }
+        .mob-src-row:nth-child(odd) { background: #f9fafb; }
+        .mob-src-row:nth-child(even) { background: white; }
     </style>
 </head>
 <body class="pb-10 bg-gray-100">
@@ -71,14 +98,14 @@
                 </svg>
                 <span class="text-sm font-bold hidden sm:inline">返回目錄</span>
             </a>
-            <h1 class="text-xl font-bold text-gray-800 text-center flex-grow pr-12">
+            <h1 class="text-lg md:text-xl font-bold text-gray-800 text-center flex-grow pr-12">
                 🌿 精油化學成分速查
             </h1>
         </div>
         
         <div class="relative max-w-lg mx-auto mb-3">
             <input type="text" id="searchInput" placeholder="搜尋成分、精油(中文/拉丁)或功效..." 
-                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors shadow-sm">
+                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors shadow-sm text-sm md:text-base">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -86,7 +113,7 @@
             </div>
         </div>
 
-        <div id="filterContainer" class="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto mb-2">
+        <div id="filterContainer" class="flex flex-wrap justify-center gap-2 max-w-4xl mx-auto mb-2 filter-scroll-mobile">
             <button onclick="filterFamily('all', this)" class="filter-btn px-3 py-1 bg-gray-700 text-white rounded-full text-xs shadow-sm hover:bg-gray-800 transition-all btn-active">全部</button>
             <button onclick="filterFamily('萜烯類', this)" class="filter-btn px-3 py-1 bg-orange-100 text-orange-800 border border-orange-200 rounded-full text-xs hover:bg-orange-200 transition-all">萜烯類</button>
             <button onclick="filterFamily('醇類', this)" class="filter-btn px-3 py-1 bg-blue-100 text-blue-800 border border-blue-200 rounded-full text-xs hover:bg-blue-200 transition-all">醇類</button>
@@ -101,7 +128,8 @@
         <div class="text-center text-xs text-gray-400" id="resultCount"></div>
     </div>
 
-    <div class="max-w-7xl mx-auto p-4 table-container">
+    <!-- ===== DESKTOP: Original Table (unchanged) ===== -->
+    <div id="desktopTable" class="max-w-7xl mx-auto p-4 table-container">
         <div class="bg-white rounded-xl shadow overflow-x-auto">
             <table class="w-full text-sm" id="mainTable">
                 <thead>
@@ -117,6 +145,11 @@
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- ===== MOBILE: Card Layout ===== -->
+    <div id="mobileCards" class="px-3 py-3 space-y-2">
+        <div id="mobileCardList"></div>
     </div>
 
     <script>
@@ -478,7 +511,6 @@
                 caution: "",
                 sources: []
             },
-            // 醇類
             {
                 name: "沉香醇 (Linalool)",
                 enName: "Linalool",
@@ -722,7 +754,6 @@
                     { oil: "安息香 (暹羅)", latin: "Styrax tonkinensis", pct: "45%" }
                 ]
             },
-            // 酚類
             {
                 name: "丁香酚 (Eugenol)",
                 enName: "Eugenol",
@@ -763,7 +794,6 @@
                     { oil: "百里香", latin: "Thymus vulgaris ct. thymol", pct: "23-44%" }
                 ]
             },
-            // 醛類
             {
                 name: "檸檬醛 (Citral)",
                 enName: "Citral",
@@ -820,7 +850,6 @@
                     { oil: "安息香 (暹羅)", latin: "Styrax tonkinensis", pct: "1%" }
                 ]
             },
-            // 酮類
             {
                 name: "樟腦 (Camphor)",
                 enName: "Camphor",
@@ -957,7 +986,6 @@
                 ],
                 caution: ""
             },
-            // 酸類
             {
                 name: "酸類 (Acids)",
                 enName: "Acids",
@@ -995,7 +1023,6 @@
                     { oil: "安息香 (暹羅)", latin: "Styrax tonkinensis", pct: "42%" }
                 ]
             },
-            // 酯類
             {
                 name: "乙酸沉香酯 (Linalyl Acetate)",
                 enName: "Linalyl Acetate",
@@ -1110,7 +1137,6 @@
                     { oil: "安息香 (暹羅)", latin: "Styrax tonkinensis", pct: "3%" }
                 ]
             },
-            // 氧化物類
             {
                 name: "1,8 桉油醇 (1,8 Cineole)",
                 enName: "1,8 Cineole",
@@ -1163,7 +1189,6 @@
                     { oil: "德國洋甘菊", latin: "Matricaria recutita", pct: "0-55%" }
                 ]
             },
-            // 醚類
             {
                 name: "甲基醚蔞葉酚 (Methyl Chavicol / estragole)",
                 enName: "Methyl Chavicol",
@@ -1245,7 +1270,6 @@
                     { oil: "歐芹", latin: "Petroselinum crispum", pct: "<4%" }
                 ]
             },
-            // 內酯類
             {
                 name: "倍半萜內酯 (Sesquiterpene Lactones)",
                 enName: "Sesquiterpene Lactones",
@@ -1323,7 +1347,6 @@
                     { oil: "土木香", latin: "Inula helenium", pct: "40-50%" }
                 ]
             },
-            // 其他
             {
                 name: "玫瑰蠟 (Rose Wax)",
                 enName: "Rose Wax",
@@ -1348,10 +1371,10 @@
             return 'warn';
         }
 
+        // ===== DESKTOP: Original table render (unchanged) =====
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
-            document.getElementById('resultCount').textContent = `共 ${data.length} 筆成分`;
 
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-400 py-10">找不到相關成分</td></tr>';
@@ -1393,7 +1416,6 @@
                 `;
                 tbody.appendChild(mainRow);
 
-                // Detail row
                 const detailRow = document.createElement('tr');
                 detailRow.className = 'detail-row bg-gray-50';
                 detailRow.id = `detail-${idx}`;
@@ -1456,13 +1478,120 @@
             });
         }
 
+        // ===== MOBILE: Card render =====
+        function renderMobileCards(data) {
+            const container = document.getElementById('mobileCardList');
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10 bg-white rounded-xl">找不到相關成分</div>';
+                return;
+            }
+
+            data.forEach((item, idx) => {
+                const cautionType = getCautionType(item.caution);
+                const cautionIcon = cautionType === 'warn' ? ' ⚠️' : cautionType === 'safe' ? ' 🛡️' : '';
+
+                // Effects preview
+                const effPreview = item.effects.slice(0, 3).map(e => {
+                    const short = e.length > 10 ? e.substring(0, 10) + '…' : e;
+                    return `<span class="effect-pill">${short}</span>`;
+                }).join('');
+
+                // Top sources preview
+                const topSrc = item.sources.slice(0, 2);
+                const moreCount = item.sources.length - 2;
+                let srcPreview = topSrc.map(s =>
+                    `<span class="src-chip"><span class="font-medium text-gray-700">${s.oil}</span><span class="pct">${s.pct}</span></span>`
+                ).join('');
+                if (moreCount > 0) srcPreview += `<span class="src-chip text-gray-400">+${moreCount}</span>`;
+                if (item.sources.length === 0) srcPreview = '<span class="text-gray-300 text-xs">—</span>';
+
+                // Detail: sources list
+                let detailSources = '';
+                if (item.sources.length > 0) {
+                    detailSources = `
+                        <div class="mb-3">
+                            <div class="text-xs font-bold text-gray-500 mb-1.5">📦 來源精油</div>
+                            <div class="space-y-1">
+                                ${item.sources.map((s, si) => `
+                                    <div class="mob-src-row">
+                                        <div style="min-width:0; flex:1;">
+                                            <div class="font-semibold text-gray-700" style="font-size:0.8rem;">${s.oil}</div>
+                                            <div class="text-gray-400 italic" style="font-size:0.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.latin}</div>
+                                        </div>
+                                        <span style="flex-shrink:0; margin-left:8px; font-family:monospace; font-size:0.8rem; font-weight:600; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; padding:2px 8px;">${s.pct}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                let detailCaution = '';
+                if (item.caution) {
+                    const isSafe = cautionType === 'safe';
+                    detailCaution = `
+                        <div class="p-2.5 rounded-lg ${isSafe ? 'caution-safe' : 'caution-warn'} text-sm mb-3">
+                            ${isSafe ? '🛡️' : '⚠️'} ${item.caution.replace(/^[🛡️⚠️\s]+/, '')}
+                        </div>
+                    `;
+                }
+
+                const card = document.createElement('div');
+                card.className = `mob-card ${item.rowClass}`;
+                card.style.marginBottom = '8px';
+                card.innerHTML = `
+                    <div class="mob-card-head" onclick="toggleMobileCard(${idx}, this)">
+                        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px;">
+                            <div style="min-width:0; flex:1;">
+                                <div style="font-weight:700; font-size:0.85rem; color:#1f2937; line-height:1.3;">${item.name}${cautionIcon}</div>
+                                <div style="font-size:0.7rem; color:#9ca3af; margin-top:2px;">${item.subFamily}</div>
+                            </div>
+                            <span class="family-tag ft-${item.family}" style="flex-shrink:0;">${item.family}</span>
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:2px; margin-bottom:6px;">${effPreview}</div>
+                        <div style="display:flex; flex-wrap:wrap; align-items:center;">${srcPreview}</div>
+                        <div style="text-align:center; margin-top:4px;">
+                            <span class="expand-icon" id="mob-icon-${idx}" style="color:#d1d5db; font-size:0.7rem;">▶</span>
+                        </div>
+                    </div>
+                    <div class="mob-card-detail" id="mob-detail-${idx}">
+                        <div style="padding-top:12px;">
+                            <div class="mb-3">
+                                <div class="text-xs font-bold text-gray-500 mb-1">📝 描述</div>
+                                <div class="text-sm text-gray-700">${item.desc}</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="text-xs font-bold text-gray-500 mb-1.5">✨ 完整功效</div>
+                                <ul class="list-disc list-inside text-sm text-gray-700 space-y-0.5">
+                                    ${item.effects.map(e => `<li>${e}</li>`).join('')}
+                                </ul>
+                            </div>
+                            ${detailCaution}
+                            ${detailSources}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // ===== Unified render =====
+        function renderAll(data) {
+            document.getElementById('resultCount').textContent = `共 ${data.length} 筆成分`;
+            renderTable(data);
+            renderMobileCards(data);
+        }
+
+        // ===== Toggle functions =====
         function toggleDetail(idx, mainRowEl) {
             const detail = document.getElementById(`detail-${idx}`);
             const icon = document.getElementById(`icon-${idx}`);
             const isOpen = detail.classList.contains('open');
 
             document.querySelectorAll('.detail-row.open').forEach(d => d.classList.remove('open'));
-            document.querySelectorAll('.expand-icon.rotated').forEach(i => i.classList.remove('rotated'));
+            document.querySelectorAll('#desktopTable .expand-icon.rotated').forEach(i => i.classList.remove('rotated'));
             document.querySelectorAll('.main-row.active-row').forEach(r => r.classList.remove('active-row'));
 
             if (!isOpen) {
@@ -1472,6 +1601,27 @@
             }
         }
 
+        window.toggleMobileCard = function(idx, headEl) {
+            const detail = document.getElementById(`mob-detail-${idx}`);
+            const icon = document.getElementById(`mob-icon-${idx}`);
+            const card = headEl.closest('.mob-card');
+            const isOpen = detail.classList.contains('open');
+
+            // Close all mobile cards
+            document.querySelectorAll('.mob-card-detail.open').forEach(d => d.classList.remove('open'));
+            document.querySelectorAll('#mobileCards .expand-icon.rotated').forEach(i => i.classList.remove('rotated'));
+            document.querySelectorAll('.mob-card.active-card').forEach(c => c.classList.remove('active-card'));
+
+            if (!isOpen) {
+                detail.classList.add('open');
+                icon.classList.add('rotated');
+                card.classList.add('active-card');
+                setTimeout(() => {
+                    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 50);
+            }
+        };
+
         function sortTable(key) {
             sortAsc = !sortAsc;
             currentData.sort((a, b) => {
@@ -1479,7 +1629,7 @@
                 const vb = b.name.toLowerCase();
                 return sortAsc ? va.localeCompare(vb, 'zh-Hant') : vb.localeCompare(va, 'zh-Hant');
             });
-            renderTable(currentData);
+            renderAll(currentData);
         }
 
         window.filterFamily = function(family, btn) {
@@ -1491,7 +1641,7 @@
             } else {
                 currentData = chemicalData.filter(item => item.family === family);
             }
-            renderTable(currentData);
+            renderAll(currentData);
         };
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
@@ -1503,10 +1653,10 @@
                 item.effects.some(eff => eff.toLowerCase().includes(term)) ||
                 item.sources.some(src => src.oil.toLowerCase().includes(term) || src.latin.toLowerCase().includes(term))
             );
-            renderTable(currentData);
+            renderAll(currentData);
         });
 
-        renderTable(currentData);
+        renderAll(currentData);
     </script>
 </body>
 </html>
