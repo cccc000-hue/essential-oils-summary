@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>精油底層邏輯分析系統</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f0fdf4}
+.lt{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.l1{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.l2{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+.l3{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.oil-card{transition:all .2s}
+.oil-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.chain-box{border-left:3px solid #a7f3d0;padding-left:12px;margin-bottom:12px}
+.cp{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:2px 8px;font-size:.73rem;margin:2px;white-space:nowrap}
+.cp-f{background:#fef3c7;border:1px solid #fcd34d;color:#92400e}
+.cp-c{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.cp-r{background:#fdf2f8;border:1px solid #fbcfe8;color:#9d174d}
+.oil-detail{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.oil-detail.open{max-height:none}
+.filter-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.filter-scroll::-webkit-scrollbar{display:none}
+.filter-wrap{display:flex;flex-wrap:nowrap;gap:4px;padding-bottom:4px;min-width:max-content}
+.filter-wrap.expanded{flex-wrap:wrap;min-width:0}
+.fam-btn{flex-shrink:0;padding:4px 10px;border-radius:9999px;font-size:.72rem;background:#fff;color:#6b7280;border:1px solid #e5e7eb;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fam-btn:hover{border-color:#6ee7b7}
+.fam-btn.active{background:#059669;color:#fff;border-color:#059669;font-weight:700}
+.saf-btn{flex-shrink:0;padding:4px 10px;border-radius:9999px;font-size:.72rem;background:#fff;color:#6b7280;border:1px solid #e5e7eb;cursor:pointer;transition:all .15s;white-space:nowrap}
+.saf-btn:hover{border-color:#f9a8d4}
+.saf-btn.active{background:#e11d48;color:#fff;border-color:#e11d48;font-weight:700}
+.saf-section{max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .3s ease;opacity:0}
+.saf-section.open{max-height:200px;opacity:1}
+.saf-toggle{transition:all .2s}
+.saf-toggle.has-active{background:#fff1f2;border-color:#fda4af;color:#e11d48}
+.saf-badge{display:none;width:16px;height:16px;border-radius:999px;background:#e11d48;color:#fff;font-size:10px;line-height:16px;text-align:center;position:absolute;top:-4px;right:-4px}
+.saf-toggle.has-active .saf-badge{display:block}
+</style>
+</head>
+<body class="pb-10">
+
+<div class="sticky top-0 z-50 bg-white/95 backdrop-blur shadow-md">
+<div class="max-w-4xl mx-auto px-3 py-2">
+<!-- Top bar -->
+<div class="flex items-center gap-2 mb-1">
+<a href="index.html" class="flex items-center justify-center w-9 h-9 rounded-full bg-emerald-100 hover:bg-emerald-200 transition-colors flex-shrink-0" title="返回首頁">
+<svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+</a>
+<div class="flex-1 text-center">
+<h1 class="text-base md:text-lg font-bold text-emerald-800 leading-tight">🌿 精油底層邏輯分析系統 v2</h1>
+<p class="text-xs text-gray-400 hidden sm:block">科屬特性 → 化學成分 → 臨床應用 · 三層邏輯推理</p>
+</div>
+<div class="w-9 flex-shrink-0"></div>
+</div>
+<!-- Search -->
+<div class="relative mb-2">
+<input type="text" id="search" placeholder="搜尋精油、病症、化學成分、科屬..." class="w-full pl-9 pr-9 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
+<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<button id="clearBtn" onclick="document.getElementById('search').value='';doSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden text-lg leading-none">&times;</button>
+</div>
+<!-- Family filter row -->
+<div class="flex items-center gap-1.5 mb-1">
+<button id="filterToggle" onclick="toggleFilterExpand()" class="flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0" title="展開/收起篩選">
+<svg id="filterIcon" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+</button>
+<div class="flex-1 overflow-hidden">
+<div class="filter-scroll" id="filterScroll">
+<div class="filter-wrap" id="famFilter"></div>
+</div>
+</div>
+</div>
+<!-- Safety filter toggle -->
+<div class="flex items-center gap-1.5">
+<button id="safToggleBtn" onclick="toggleSafSection()" class="saf-toggle relative flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0 border border-transparent" title="禁忌篩選">
+<span class="text-sm">⚠️</span>
+<span class="saf-badge" id="safBadge">0</span>
+</button>
+<button onclick="toggleSafSection()" class="text-xs text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1">
+<span>禁忌篩選</span>
+<svg id="safArrow" class="w-3 h-3 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+</button>
+<div id="safActiveHints" class="flex-1 overflow-hidden"></div>
+</div>
+<!-- Safety filter pills (collapsible) -->
+<div class="saf-section" id="safSection">
+<div class="flex flex-wrap gap-1.5 pt-2 pb-1" id="safFilter"></div>
+</div>
+<div class="text-center text-xs text-gray-400 mt-1" id="count"></div>
+</div>
+</div>
+
+<div class="max-w-4xl mx-auto px-3 py-4" id="app"></div>
+
+<script>
+const FNORM={"唇形花科":"唇形科","牻牛兒科":"牻牛兒苗科","繖形花科":"繖形科","敗醬科":"敗醬草科"};
+function nf(f){return FNORM[f]||f;}
+
+const O=[
+{n:'檸檬尤加利',e:'Lemon-scented Eucalyptus',la:'Eucalyptus citriodora',fa:'桃金孃科',
+p:['肌肉及關節僵硬，止痛效果很好','肌肉韌帶消炎止痛','回復韌帶彈性：子宮下垂','消炎：風濕痛、關節炎、五十肩、腕管綜合症、動脈炎、尿道炎和陰道炎','驅蟲、驅蚊','抗真菌','心血管：有效降血壓','呼吸系統：對呼吸系統有治療功效','特定抗菌對象：有效對付葡萄球菌感染、白念珠菌'],
+c:['醛類：香茅醛 (Citronellal) <77%','單萜醇：香茅醇 (Citronellol) 3.5%'],
+w:'容易致敏（皮膚）'},
+{n:'藍膠尤加利',e:'Eucalyptus Blue Gum',la:'Eucalyptus globulus',fa:'桃金孃科',
+p:['強效抗菌','對呼吸系統疾病有效','袪痰溶黏','內分泌/代謝：降血糖、糖尿病、膽石','情緒/心理：提振情緒、激勵士氣','抗流行性感冒、鼻炎、支氣管炎'],
+c:['氧化物：1,8 桉油醇 (1,8 cineole) 75%','單萜烯：α-松烯 (α-pinene) 10%','酮類：松香芹酮 (pinocarvone) 0.3%'],
+w:'不適用於幼兒；容易引起皮膚刺激；有神經毒性，不適宜6歲以下幼兒使用'},
+{n:'澳洲尤加利',e:'Eucalyptus Radiata',la:'Eucalyptus radiata',fa:'桃金孃科',
+p:['作用於皮膚消炎及呼吸系統','改善子宮內膜異位症，及細菌感染而造成的陰道炎'],
+c:['氧化物：1,8 桉油醇 (1,8 cineole) 68%','單萜烯：檸檬烯 (Limonene) 5%','單萜烯：α-松烯 (α-pinene) 3%'],
+w:'容易引起皮膚刺激；不適宜6歲以下幼兒使用'},
+{n:'德國洋金菊',e:'German Chamomile',la:'Matricaria recutita',fa:'菊科',
+p:['抑制過敏反應','止痙攣','強效消炎及抗過敏劑','經前綜合症','修復肌膚，治療潰瘍','抗真菌','皮膚問題：濕疹、牛皮癬（發炎性）、敏感性肌膚（過敏）','情緒/神經：鎮靜減壓'],
+c:['倍半萜烯：母菊天藍烴 (Chamazulene) 46%','倍半萜醇：紅沒藥醇 (α-bisabolol) 2-67%','氧化物：紅沒藥醇氧化物 (bisabolol oxide) 0-55%'],
+w:'有通經特性，懷孕初期慎用'},
+{n:'羅馬洋金菊',e:'Roman Chamomile',la:'Chamaemelum nobile',fa:'菊科',
+p:['抑鬱，情緒鎮靜','鎮痛：偏頭痛、牙痛及經痛','失眠','撫平神經系統','停經/經痛','更年期、經前綜合症','皮膚炎症：濕疹、牛皮癬、皮膚敏感','呼吸系統：緊張性哮喘（抗痙攣）','消化系統：消化不良及食慾不振'],
+c:['酯類：歐白芷酸異丁酯 (Isobutyl angelate) 35%','酯類：歐白芷酸異戍酯 (Butyl angelate) 20%'],
+w:'有通經特性，懷孕初期慎用'},
+{n:'快樂鼠尾草',e:'Clary Sage',la:'Salvia sclarea',fa:'唇形花科',
+p:['降血壓，抗膽固醇','靜脈曲張','收縮子宮','撫平神經系統','平衡荷爾蒙分泌：經痛、調經、更年期','抗抑鬱焦慮、神經緊張','抗痙攣、肌肉疼痛','頭皮屑、脫髮','抗發炎'],
+c:['酯類：乙酸沉香酯 (Linalyl acetate) 64%','醇類：沉香醇 (Linalool) 15%','雙萜醇：硬尾醇 (Sclareol) 1%'],
+w:'不使用於荷爾蒙相關癌症患者；有通經特性，懷孕全期慎用'},
+{n:'西洋蓍草',e:'Yarrow',la:'Achillea millefolium',fa:'菊科',
+p:['所有肌腱炎症：類風濕性關節炎','高血壓、血栓、靜脈曲張','皮膚傷口相關：粉刺、燙傷、割傷、濕疹、疤痕','閉經、痛經','失眠、壓力','消化系統：便秘、腸胃痙攣、痔瘡、消化不良','免疫/呼吸系統：感冒、流行性感冒和發燒'],
+c:['倍半萜烯：母菊天藍烴 (Chamazulene) 10%','倍半萜烯：β-石竹烯 (beta-caryophyllene) 10%','酮類：樟腦 (Camphor) 10-20%'],
+w:'嬰幼兒、懷孕、癲癎症慎用'},
+{n:'檸檬草',e:'Lemongrass',la:'Cymbopogon flexuosus',fa:'禾本科',
+p:['改善循環，暗瘡','遏止發炎止痛','止痛、頭痛、神經疲乏','強健肌肉、水腫、淋巴阻塞','增加專注力、集中精神','痤瘡、香港腳、止汗除臭、白色念珠菌','消化不良及腸胃炎','驅除蚊蟲和跳蚤'],
+c:['醛類：牻牛兒醛 (Geranial) 46%','醛類：橙花醛 (Neral) 35%'],
+w:'劑量過高會引起皮膚刺激；需稀釋1%以下使用'},
+{n:'香茅',e:'Citronella',la:'Cymbopogon nardus',fa:'禾本科',
+p:['驅蟲、驅蚊','止痛：頭痛、偏頭痛及神經痛','止汗除臭、油性皮膚、抗真菌、消炎','風濕痛、關節炎','肌肉疲勞','傷風、流行性感冒、輕微感染'],
+c:['醇類：牻牛兒醇 (geraniol) 55%','醛類：牻牛兒醛 (geranial) 7%','醛類：香茅醛 (citronellal) 6%','酯類：乙酸牻牛兒酯 (geranyl acetate) 2%'],
+w:'輕微過敏性，常引致敏感'},
+{n:'玫瑰草',e:'Palmarosa',la:'Cymbopogon martinii',fa:'禾本科',
+p:['癬','皮膚感染（遏止發炎）','抗菌、抗病毒：痤瘡、皮膚炎、濕疹','保濕，促進肌膚細胞再生；調節皮脂分泌','神經疲乏及壓力有關的症狀','厭食、腸胃炎、腸道感染、膀胱炎'],
+c:['醇類：天竺葵醇 (geraniol) 72%','酯類：乙酸牻牛兒酯 (geranyl acetate) 16%'],
+w:''},
+{n:'岩蘭草',e:'Vetiver',la:'Vetiveria zizanioides',fa:'禾本科',
+p:['風濕痛症','活化靜脈（靜脈曲張）及淋巴循環','抑鬱、神經緊張、失眠','消除強烈的恐懼和不安','改善循環，關節炎、肌肉疼痛','痤瘡、緊緻肌膚、促進皮膚再生、傷口癒合'],
+c:['醇類：岩蘭醇 (Veriverol) 30%','醇類：客烯醇 (khusimol) 15%','醇類：異株欒倍半萜 (Isovalencenol) 8%'],
+w:'孕婦及嬰兒慎用'},
+{n:'佛手柑',e:'Bergamot',la:'Citrus bergamia',fa:'芸香科',
+p:['抗抑鬱及提升情緒','改善壓力問題','調節食慾，改善厭食症及暴食症','殺菌：唇皰疹、尿道炎、膀胱炎','改善油性皮膚，暗瘡、頭皮屑'],
+c:['單萜烯：檸檬烯 (limonene) 40%','醇類：沉香醇 (linalool) 12%','酯類：乙酸沉香酯 (linalyl acetate) 26%','內酯：佛手柑內酯 (Bergapten) 0.33%'],
+w:'有光敏性，使用後12小時內不要暴露皮膚於紫外光下'},
+{n:'西柚',e:'Grapefruit',la:'Citrus paradisi',fa:'芸香科',
+p:['肌肉疲勞及僵硬、抑鬱、頭痛、壓力','水腫、橙皮脂肪、分解脂肪，幫助減肥瘦身','痤瘡、粉刺及油性皮膚','化解肝膽結石、調理肝功能失調','排毒、傷風感冒','神經系統疲乏、柏金遜症'],
+c:['單萜烯：檸檬烯 (limonene) 94%','內酯：佛手柑內酯 (Bergapten) 0.02%'],
+w:'有光敏性，12小時內不要暴露皮膚於紫外光下'},
+{n:'檸檬',e:'Lemon',la:'Citrus limon',fa:'芸香科',
+p:['抗菌','減輕病人焦慮','抗貧血、治風濕','止血、循環不佳、靜脈曲張','指甲脆弱、皮膚外傷、控油','白念珠菌、疣、皰疹','哮喘、喉嚨感染、支氣管炎','消化不良、化解肝膽結石','分解脂肪，幫助瘦身','改善腦退化症'],
+c:['單萜烯：檸檬烯 (limonene) 70%','單萜烯：β-松烯 (β-pinene) 10%','內酯：佛手柑內酯 (Bergapten) <0.02%'],
+w:'含呋喃香豆素，有光敏性'},
+{n:'蜜柑',e:'Mandarin',la:'Citrus reticulata',fa:'芸香科',
+p:['非常溫和，適合老人、小童和懷孕婦女','抑鬱及失眠','風濕症的痛楚','妊娠紋','腸胃氣脹','化解肝膽結石、護肝','分解脂肪，幫助瘦身','增進食慾'],
+c:['單萜烯：檸檬烯 (limonene) 70%','單萜烯：γ-松油烯 (γ-terpinene) 19%'],
+w:''},
+{n:'苦橙',e:'Orange Bitter',la:'Citrus aurantium var. amara',fa:'芸香科',
+p:['抗抑鬱、失眠、心悸、眩暈','血液循環不佳','分解脂肪、瘦身','集中注意力','抗紅腫發炎、殺菌、抗真菌','化解肝膽結石、護肝'],
+c:['單萜烯：檸檬烯 (limonene) 95%','內酯：佛手柑內酯 (Bergapten) 0.03%'],
+w:'含呋喃香豆素，有光敏性'},
+{n:'甜橙',e:'Orange Sweet',la:'Citrus aurantium var. sinensis',fa:'芸香科',
+p:['抗抑鬱、提振情緒','分解脂肪、瘦身','水腫、橙皮脂肪','化解肝膽結石、促進膽汁分泌','便秘、消化不良、腸胃痙攣','抗紅腫發炎、殺菌、抗真菌','支氣管炎','傷風、流行性感冒'],
+c:['單萜烯：檸檬烯 (limonene) 95%'],
+w:'柑橘類精油避免存放過久'},
+{n:'橙花',e:'Neroli',la:'Citrus aurantium var. amara',fa:'芸香科',
+p:['抗抑鬱、焦慮、助眠、促進性慾','殺菌、抗真菌','治痙攣','循環不佳、靜脈曲張','促進皮膚細胞更生：疤痕、敏感皮膚','腸胃脹氣、消化不良','預防妊娠紋、產後抑鬱','經前綜合症及更年期'],
+c:['醇類：沉香醇 (linalool) 38%','醇類：橙花醇 (Nerol) 0.9%','醇類：牻牛兒醇 (geraniol) 2.3%','單萜烯：檸檬烯 (limonene) 17%'],
+w:'高比例單萜烯類會引致皮膚過敏'},
+{n:'苦橙葉',e:'Petitgrain',la:'Citrus aurantium var. amara',fa:'芸香科',
+p:['抗抑鬱、失眠、心悸、眩暈','暗瘡、油性皮膚、油性頭皮屑','抗紅腫發炎、殺菌、鎮靜','消化不良','支氣管炎','提升免疫系統'],
+c:['醇類：沉香醇 (linalool) 22%','酯類：乙酸沉香酯 (linalyl acetate) 50%'],
+w:''},
+{n:'真正薰衣草',e:'True Lavender',la:'Lavandula angustifolia',fa:'唇形花科',
+p:['哮喘、支氣管炎、黏膜炎','經痛、白帶、經前綜合症及更年期','過敏症、香港腳、燒傷','濕疹、發炎、昆蟲叮咬','促進傷口癒合','情緒低落、頭痛、失眠、偏頭痛','疼痛、肌肉僵硬、腰痛、風濕病及扭傷'],
+c:['醇類：沉香醇 (linalool) 32-42%','酯類：乙酸沉香酯 (linalyl acetate) 40-52%'],
+w:'降血壓，低血壓患者慎用；有通經特性，懷孕初期慎用'},
+{n:'穗花薰衣草',e:'Spike Lavender',la:'Lavandula latifolia',fa:'唇形花科',
+p:['抗真菌','幫助傷口癒合','呼吸道感染、黏膜炎、哮喘、支氣管炎','袪痰、消除黏液','偏頭痛、神經痛','蚊叮蟲咬'],
+c:['氧化物：1,8 桉油醇 (1,8 cineole) 27%','醇類：沉香醇 (linalool) 40%','單萜酮：樟腦 (camphor) 10-11%'],
+w:'含單萜酮類，嬰幼兒避免使用'},
+{n:'醒目薰衣草',e:'Lavandin',la:'Lavandula hybrida',fa:'唇形花科',
+p:['止痛、殺菌、促進傷口結痂','疼痛及肌肉僵硬','傷風及咳嗽','各種呼吸系統問題、黏膜炎'],
+c:['醇類：沉香醇 (linalool) 30-50%','酯類：乙酸沉香酯 (linalyl acetate) 15-50%','單萜酮：樟腦 (camphor) 5-15%','氧化物：1,8 桉油醇 (1,8 cineole) 5-25%'],
+w:'含單萜酮類，嬰幼兒避免使用'},
+{n:'牛膝草',e:'Hyssop',la:'Hyssopus officinalis',fa:'唇形花科',
+p:['袪痰、支氣管炎、黏膜炎、咳嗽','舒緩哮喘','平衡血壓','用於焦慮、疲倦、神經緊張','強力抗病毒（流感）'],
+c:['酮類：異松樟酮 (Iso-Pinocamphone) 40%'],
+w:'癲癎症、懷孕婦女及6歲以下小童不宜使用；含神經毒性'},
+{n:'高地牛膝草',e:'Mountain Hyssop',la:'Hyssopus decumbens',fa:'唇形花科',
+p:['強大抗病毒能力','耳鼻喉或呼吸道感染','鼻竇炎、支氣管炎、嬰兒細支氣管炎','化解黏液、排痰'],
+c:['氧化物：1,8 桉油醇 (1,8 cineole) 50%','單萜烯：β-松烯 (β-pinene) 25%','酮類：異松樟酮 (Iso-Pinocamphone) 3%'],
+w:''},
+{n:'肉桂葉',e:'Cinnamon Leaf',la:'Cinnamomum zeylanicum',fa:'樟科',
+p:['循環系統不佳','分娩、性冷感、白帶','風濕病','感冒、流行性感冒','蝨、疥瘡、牙齒保健、疣','厭食症、消化不良、腸道感染','神經疲乏及壓力','止痛、麻醉、抗菌、抗感染'],
+c:['酚類：丁香酚 (Eugenol) 74%'],
+w:'孕婦忌用；在黏膜上不可使用超越3%'},
+{n:'錫蘭肉桂皮',e:'Cinnamon Bark',la:'Cinnamomum verum',fa:'樟科',
+p:['抗糖尿病','強化子宮收縮，幫助生產','提振男性性功能','激勵消化系統','強效抗菌、殺菌'],
+c:['醛類：肉桂醛 (Cinnamaldehyde) 68%'],
+w:'具肝毒性，建議1%以下；孕婦忌用'},
+{n:'丁香花苞',e:'Clove Bud',la:'Eugenia caryophyllata',fa:'桃金孃科',
+p:['止痛、牙痛','壓力、失憶、精神疲勞','關節炎、風濕性關節炎、扭傷','香港腳','胃氣脹、腸胃痙攣','甲狀腺失調'],
+c:['酚類：丁香酚 (Eugenol) 80%','酯類：乙酸丁香酯 (Eugenyl acetate) 10%'],
+w:'2歲以下兒童、孕婦忌用；不能與抗凝血藥物同時使用'},
+{n:'山雞椒',e:'May Chang',la:'Litsea cubeba',fa:'樟科',
+p:['心臟滋補','痤瘡、皮膚炎、止汗除臭','驅蟲','腸胃氣脹、消化不良','抗菌及抗真菌'],
+c:['醛類：檸檬醛 (Citral) 80%','單萜烯：檸檬烯 (Limonene) 13%'],
+w:'2歲以下兒童忌用'},
+{n:'岩玫瑰',e:'Cistus / Rock Rose',la:'Cistus ladanifer',fa:'半日花科',
+p:['傷口處理、強效止血、促進傷口癒合、蟹足腫','抗病毒','安撫驚恐情緒','提升免疫力'],
+c:['單萜烯：α-蒎烯 (α-pinene) 38%','單萜烯：莰烯 (camphene) 5.5%'],
+w:''},
+{n:'茶樹',e:'Tea Tree',la:'Melaleuca alternifolia',fa:'桃金孃科',
+p:['抗菌、抗真菌、抗病毒','增強免疫性','促進皮膚再生','殺菌、促進傷口結痂','化痰、支氣管炎','膿腫、痤瘡、香港腳、燒傷、頭皮屑','哮喘、黏膜炎、鼻竇炎','陰道鵝口瘡、膀胱炎、念珠菌','免疫系統提升、傷風、發燒'],
+c:['醇類：萜品烯四醇 (terpinen-4-ol) 40%','氧化物：1,8 桉樹腦 (1,8 cineole) 2.3%','單萜烯：松油烯 (terpinene) 10%'],
+w:'過量使用會使皮膚過敏'},
+{n:'乳香',e:'Frankincense',la:'Boswellia carteri',fa:'橄欖科',
+p:['幫助放鬆、調節荷爾蒙','膀胱炎','美白抗皺、潰瘍','促進血液循環、幫助傷口癒合','經痛、白帶、子宮出血','哮喘、支氣管炎、咳嗽','激勵免疫系統'],
+c:['單萜烯：α-蒎烯 (α-pinene) 31%','單萜烯：檸檬烯 (Limonene) 9%'],
+w:''},
+{n:'沒藥',e:'Myrrh',la:'Commiphora myrrha',fa:'橄欖科',
+p:['關節炎','甲狀腺機能亢進','香港腳、粗糙皮膚、濕疹、傷口及抗衰老','牙肉感染、口腔潰瘍、喉嚨疼痛','消化不良、食慾不振','白帶、無月經'],
+c:['倍半萜烯：呋喃按-1,3-二烯 (Furanoeudesma-1,3-diene) 34%'],
+w:'懷孕期不可使用'},
+{n:'秘魯聖木',e:'Palo Santo',la:'Bursera graveolens',fa:'橄欖科',
+p:['舒緩各種疼痛、肌肉酸痛','強效消炎、抗菌、抗病毒','抗痙攣','呼吸道感染','舒緩流行性感冒和增強免疫力'],
+c:['單萜烯：檸檬烯 (Limonene) 70%','醚類：薄荷呋喃 (Menthofuran) 0.5-14.5%','單萜醇：α-萜烯醇 (α-terpineol) 10%'],
+w:'含有薄荷呋喃，有強烈肝毒性，需小心使用'},
+{n:'波旁天竺葵',e:'Geranium Bourbon',la:'Pelargonium graveolens',fa:'牻牛兒科',
+p:['抗抑鬱、殺菌、收斂劑','水腫、循環不佳、靜脈曲張','止血','平衡油脂分泌、痤瘡、燒傷、帶狀皰疹','肝臟胰臟功能不足、糖尿病','調節荷爾蒙、更年期、經痛','扁桃線炎','預防褥瘡、痔瘡'],
+c:['醇類：香茅醇 (Citronellol) 32%','醇類：牻牛兒醇 (Geraniol) 16%','氧化物：玫瑰氧化物 (rose oxide) 1.2%'],
+w:'有通經特性，懷孕婦女慎用'},
+{n:'玫瑰奧圖',e:'Rose Otto',la:'Rosa damascena',fa:'薔薇科',
+p:['頭痛、神經系統緊張','陽萎、性冷感','血液循環不佳及心悸','慢性支氣管炎、哮喘','濕疹、皰疹、微絲血管破裂','肝臟出血、膀胱炎','不規律月經、白帶'],
+c:['醇類：香茅醇 (Citronellol) 32%','醇類：牻牛兒醇 (Geraniol) 16%','醇類：橙花醇 (nerol) 9%','玫瑰蠟 15-24%'],
+w:'懷孕初期避免使用'},
+{n:'玫瑰原精',e:'Rose Absolute',la:'Rosa damascena',fa:'薔薇科',
+p:['促進皮膚細胞修護','提升免疫力','抗菌、抗病毒'],
+c:['醇類：笨乙醇 (phenylethyl alcohol) 73%','醇類：香茅醇 (Citronellol) 11%','醇類：牻牛兒醇 (Geraniol) 7%'],
+w:'懷孕初期避免使用'},
+{n:'永久花',e:'Helichrysum',la:'Helichrysum italicum',fa:'菊科',
+p:['沮喪、驚嚇、恐懼症','疼痛、頭痛、偏頭痛','美白、細胞再生、疤痕、潰瘍','肝/脾充血腫脹','活血化瘀、促進傷口癒合','感冒、流行性感冒','支氣管炎、哮喘'],
+c:['單萜烯：α-蒎烯 (α-pinene) 21%','酮類：意大利酮 (Italidione) 4%'],
+w:''},
+{n:'熱帶羅勒',e:'Tropical Basil',la:'Ocimum basilicum ct. methyl-chavicol',fa:'唇形花科',
+p:['抗腸胃痙攣和抽筋、消炎止痛','經痛、頭痛、消除脹氣、解充血'],
+c:['醚類：甲基醚蔞葉酚 (Methyl chavicol) 80%'],
+w:'最多使用2%；孕婦、小孩避免使用'},
+{n:'甜羅勒',e:'Sweet Basil',la:'Ocimum basilicum ct. linalool',fa:'唇形花科',
+p:['清除身心不安、情緒低落、偏頭痛','肌肉疼痛及痛楚','消化不良、腸胃脹氣、嘔心','肺氣腫、鼻竇炎','膀胱炎','痛風、調節心跳'],
+c:['醇類：沉香醇 (Linalool) 43%','醚類：甲基醚蔞葉酚 (Methyl chavicol) 17%'],
+w:'孕婦、小孩避免使用'},
+{n:'胡椒薄荷',e:'Peppermint',la:'Mentha piperita',fa:'唇形花科',
+p:['昏厥、頭痛、精神疲乏、眩暈','肌肉痛楚、神經痛','痤瘡、皮膚炎、環癬、牙痛','調節月經'],
+c:['醇類：薄荷醇 (Menthol) 32%','酮類：薄荷酮 (Menthone) 25%'],
+w:'癲癎症、發燒避免使用；不可用於孕婦、嬰兒及6歲以下兒童'},
+{n:'綠薄荷',e:'Spearmint',la:'Mentha spicata',fa:'唇形花科',
+p:['抑鬱、頭痛、偏頭痛、疲勞','傷口癒合','鼻黏膜炎、鼻竇炎、發燒、支氣管炎','胃腸氣、消化不良、嘔吐'],
+c:['酮類：香芹酮 (Carvone) 58%'],
+w:'不可用於孕婦、嬰兒及6歲以下兒童'},
+{n:'佛手柑薄荷',e:'Bergamot Mint',la:'Mentha citrata',fa:'唇形花科',
+p:['神經疲竭','心臟調節','刺激分泌：胃、肝臟、胰臟','促進排卵、滋補男性生殖系統','膀胱炎'],
+c:['醇類：沉香醇 (Linalool) 44%','酯類：乙酸沉香酯 (Linalyl acetate) 35%'],
+w:''},
+{n:'迷迭香（桉油醇型）',e:'Rosemary ct. 1,8-cineole',la:'Rosmarinus officinalis ct. 1,8-cineole',fa:'唇形花科',
+p:['虛弱、頭痛、神經痛、增強記憶力','肌肉痛楚、風濕病','血液循環不佳、痛風、水腫','痤瘡、濕疹、促進頭髮生長','哮喘、支氣管炎','消化不良、肝臟失調','經痛、白帶','傷風、流行性感冒'],
+c:['氧化物：1,8 桉樹腦 (1,8 cineole) 40%','單萜烯：松烯 (Pinene) 14%','酮類：樟腦 (Camphor) 13%'],
+w:'懷孕婦女慎用；高血壓患者避免使用'},
+{n:'迷迭香（樟腦型）',e:'Rosemary ct. camphor',la:'Rosmarinus officinalis ct. camphor',fa:'唇形花科',
+p:['發炎止痛、痕癢','肌肉疼痛、退化性關節炎','驅蟲、防蟲'],
+c:['氧化物：1,8 桉樹腦 (1,8 cineole) 18%','單萜烯：松烯 (Pinene) 22%','酮類：樟腦 (Camphor) 13-20%'],
+w:'癲癇患者禁用；孕婦禁用；嬰兒禁用'},
+{n:'迷迭香（馬鞭草酮型）',e:'Rosemary ct. verbenone',la:'Rosmarinus officinalis ct. verbenone',fa:'唇形花科',
+p:['養肝排毒','幫助肝臟解毒'],
+c:['單萜烯：松烯 (Pinene) 42%','酮類：樟腦 (Camphor) 5%','酮類：馬鞭草酮 (Verbenone) 5%','氧化物：1,8 桉樹腦 (1,8 cineole) 5%'],
+w:''},
+{n:'百里香（百里酚型）',e:'Thyme Red',la:'Thymus vulgaris ct. thymol',fa:'唇形花科',
+p:['精神疲累及抑鬱','風濕病、肌肉及關節僵硬','膿腫、痤瘡、油性皮膚','哮喘、支氣管炎、咳嗽','消化不良、腸胃脹氣','膀胱炎、尿道炎','激勵免疫系統、傷風、感冒'],
+c:['酚類：百里酚 (thymol) 32-63%','酚類：香荊芥酚 (Carvacrol) 23-44%'],
+w:'高血壓者不宜使用；孕婦慎用'},
+{n:'甜百里香（沉香醇型）',e:'Thyme Sweet',la:'Thymus vulgaris ct. linalool',fa:'唇形花科',
+p:['疲勞、失眠','風濕病','牛皮癬、濕疹、疣','支氣管炎','膀胱炎','激勵免疫系統、傷風、感冒','溫和，小孩可用'],
+c:['醇類：沉香醇 (linalool) 45%'],
+w:''},
+{n:'歐洲赤松',e:'Pine',la:'Pinus sylvestris',fa:'松科',
+p:['消炎、殺菌','疲勞、神經緊張及壓力','關節炎、肌肉疼痛、風濕、坐骨神經痛','循環不佳、痛風','哮喘、支氣管炎、黏膜炎、鼻竇炎','膀胱炎、泌尿感染','咳嗽、流行性感冒及傷風'],
+c:['單萜烯：松烯/蒎烯 (Pinene) 66%'],
+w:'濃度過高可能引發皮膚過敏'},
+{n:'大西洋雪松',e:'Cedarwood Atlas',la:'Cedrus atlantica',fa:'松科',
+p:['殺菌、收斂、利尿、化痰、鎮靜','關節炎及風濕病','消除水腫','痤瘡、濕疹、脫髮及潰瘍','支氣管炎、呼吸不暢順','膀胱失調、白帶','抗腫瘤，誘導癌細胞凋亡'],
+c:['倍半萜烯：雪松烯 (Himachalene) 60%','酮類：大西洋酮 (Alantone) 4%'],
+w:'懷孕期不能使用'},
+{n:'膠冷杉',e:'Balsam Fir',la:'Abies balsamea',fa:'松科',
+p:['消除粘液、化痰、止咳','支氣管炎和哮喘','各種呼吸系統的問題'],
+c:['單萜烯：松烯/蒎烯 (Pinene) 46%','單萜烯：檸檬烯 (Limonene) 14%','酯類：乙酸龍腦酯 (Bornyl-acetate) 17%'],
+w:''},
+{n:'黑雲杉',e:'Black Spruce',la:'Picea mariana',fa:'松科',
+p:['消炎、關節炎','即時止痛','疲勞憂鬱','抗痙攣','抗菌抗感染'],
+c:['單萜烯：樟烯 (Camphene) 18%','酯類：乙酸龍腦酯 (Bornyl-acetate) 23%'],
+w:''},
+{n:'檀香',e:'Sandalwood',la:'Santalum album',fa:'檀香科',
+p:['抑鬱、失眠、壓力有關情況','痤瘡、乾燥皮膚、濕疹、潤膚','支氣管炎、黏膜炎、咳嗽','腹瀉、嘔心','膀胱炎','常用於冥想之用'],
+c:['醇類：檀香醇 (Santalol) 69%','倍半萜烯：檀香烯 (Santalene) 4%'],
+w:''},
+{n:'甜馬可蘭',e:'Sweet Marjoram',la:'Origanum majorana',fa:'唇形花科',
+p:['頭痛失眠','肌肉痛','關節炎、腰痛、肌肉僵硬、風濕病','哮喘、支氣管炎','便秘、消化不良、腸胃脹氣','經前緊張、經痛及無月經'],
+c:['醇類：萜品烯四醇 (Terpinen-4-ol) 21%','單萜烯：γ-松油烯 (γ-Terpinene) 15.5%'],
+w:'懷孕初期避免使用'},
+{n:'甘松香',e:'Spikenard',la:'Nardostachys jatamansi',fa:'敗醬科',
+p:['失眠、偏頭痛、壓力及焦慮','過敏症、發炎、年長皮膚','類固醇治療後皮膚支持','腸道過敏','幫助睡眠','令人放下及寬恕'],
+c:['倍半萜烯：白菖烯 (Calarene) 7%','酮類：纈草酮 (Valeranone) 3%'],
+w:''},
+{n:'纈草',e:'Valerian',la:'Valeriana officinalis',fa:'敗醬科',
+p:['失眠、壓力','坐骨神經痛'],
+c:['單萜烯：莰烯 (Camphene) 24%','酯類：乙酸龍腦酯 (bornyl-acetate) 32%'],
+w:''},
+{n:'香蜂草',e:'Melissa',la:'Melissa officinalis',fa:'唇形花科',
+p:['歇斯底里、心悸、失眠、頭痛','高血壓、咽喉炎','胃抽筋、消化不良、嘔心','單純皰疹'],
+c:['倍半萜烯：β-丁香油烴 (Beta-caryophyllene) 22%','倍半萜烯：大根老鸛草烯 (Gernacrene D) 20%','醛類：檸檬醛 (Citral) 20%'],
+w:'口服（青光眼）；2歲以下兒童慎用'},
+{n:'絲柏',e:'Cypress',la:'Cupressus sempervirens',fa:'柏科',
+p:['收斂效果：止血','靜脈曲張、痔瘡、淋巴水腫','排水、水腫','治療多汗症','哮喘、支氣管炎、咳嗽','經痛、更年期、月經過多','改善油性皮膚'],
+c:['單萜烯：松烯 (Pinene) 50%','單萜烯：δ-3-蒈烯 (delta-3-carene) 12%','醇類：雪松醇 (cedrol) 7%'],
+w:''},
+{n:'維吉尼亞雪松',e:'Cedarwood Virginian',la:'Juniperus virginiana',fa:'柏科',
+p:['神經系統緊張','慢性關節炎及風濕病','靜脈炎','痤瘡、頭皮屑、濕疹、潰瘍','支氣管炎及黏膜炎','膀胱炎、白帶'],
+c:['醇類：雪松醇 (cedrol) 21%','倍半萜烯：雪松烯 (Cedarene) 30%'],
+w:''},
+{n:'杜松果',e:'Juniper Berry',la:'Juniperus communis',fa:'柏科',
+p:['焦慮、神經系統緊張','風濕病、肌肉疼痛','毒素積聚、蜂窩組織','痤瘡、濕疹、油膩肌膚','膀胱炎','無月經、經痛、白帶','傷風感冒及感染'],
+c:['單萜烯：松烯 (Pinene) 33%','單萜烯：檜烯 (sabinene) 17%','單萜烯：月桂烯 (Myrcene) 14%'],
+w:'腎病患者避免使用'},
+{n:'粉紅胡椒',e:'Pink Pepper',la:'Schinus molle',fa:'漆樹科',
+p:['利尿','風濕','止痛'],
+c:['單萜烯：α-水芹烯 (alpha-phellandrene) 23%','單萜烯：月桂烯 (Myrcene) 22%'],
+w:''},
+{n:'月桂葉',e:'Bay Laurel',la:'Laurus nobilis',fa:'樟科',
+p:['平衡自主神經','改善淋巴循環、動脈纖維化','風濕及關節炎','消炎、抗病毒','抗痙攣、止痛','呼吸系統、膀胱炎','抑制脫髮、促進頭髮生長'],
+c:['氧化物：1,8 桉油醇 (1,8-cineole) 32%','單萜醇：沉香醇 (Linalool) 10%','單萜烯：月桂烯 (Myrcene) 1.6%'],
+w:'不適宜6歲以下幼兒使用'},
+{n:'芳樟',e:'Ho Wood',la:'Cinnamomum camphora ct. linalool',fa:'樟科',
+p:['抗菌','驅蟲','舒緩焦慮、壓力及抑鬱','一般疼痛及肌肉痛楚','痤瘡、乾燥皮膚、燙傷','支氣管炎、咳嗽及哮喘','傷風感冒'],
+c:['單萜醇：沉香醇 (Linalool) 94%'],
+w:''},
+{n:'桉油樟',e:'Ravintsara',la:'Cinnamomum camphora ct. 1,8-cineole',fa:'樟科',
+p:['失眠','肌肉疲勞','疱疹、水痘、病毒性肝炎','各種呼吸系統問題','支氣管炎、鼻竇炎','腸炎、肝臟','病毒感染'],
+c:['氧化物：1,8-桉油醇 (1,8-cineole) 58%'],
+w:'不適宜6歲以下幼兒使用'},
+{n:'胡蘿蔔籽',e:'Carrot Seed',la:'Daucus carota',fa:'繖形花科',
+p:['神經痛、坐骨神經痛','關節炎、風濕炎','清除血液毒素、痛風、改善水腫','美白淡斑','胃脹氣、消化不良、淨化肝臟','膀胱炎','月經失調、促進乳汁'],
+c:['醇類：胡蘿蔔醇 (Carotol) 25%','單萜烯：α-松烯 (alpha-pinene) 13.5%'],
+w:'懷孕時避免使用'},
+{n:'芹菜籽',e:'Celery Seed',la:'Apium graveolens',fa:'繖形科',
+p:['關節炎及風濕','痛風、水腫及毒素積聚','濕疹、牛皮癬','滋潤年長皮膚','淡化肝斑、美白','消化不良、滋補肝臟','經前緊張、無月經及經痛'],
+c:['單萜烯：檸檬烯 (Limonene) 70%','內酯類：瑟丹內酯 (Sedanenolide) 5%'],
+w:''},
+{n:'薑',e:'Ginger',la:'Zingiber officinale',fa:'薑科',
+p:['風濕病、疼痛、關節炎、扭傷','刺激循環系統達致暖和','慢性支氣管炎、黏膜炎、咳嗽','胃脹氣、便秘、食慾不振、止嘔','舒緩晨吐、暈車暈船'],
+c:['倍半萜烯：α-薑烯 (alpha-zingiberene) 28%','倍半萜烯：倍半水芹烯 (sesquiphellandrene) 12%','倍半萜烯：金合歡烯 (trans-α-farnesene) 9%'],
+w:''},
+{n:'荳蔻',e:'Cardamom',la:'Elettaria cardamomum',fa:'薑科',
+p:['疲勞','胃痙攣、脹氣','口臭、胃灼熱','消化不良、噁心','支氣管感染'],
+c:['酯類：乙酸萜品酯 (Terpinyl acetate) 48%','氧化物：1,8 桉樹腦 (1,8 cineole) 37%'],
+w:''},
+{n:'甜茴香',e:'Sweet Fennel',la:'Foeniculum vulgare',fa:'繖形花科',
+p:['風濕','橘皮組織、水腫','明亮肌膚、油性及年長皮膚','哮喘及支氣管炎','增進食慾、舒緩絞痛、便秘','激活雌激素，平衡雄激素','更年期問題、舒緩經痛'],
+c:['醚類：反式洋茴香腦 (Anethole) 80%','醚類：甲基醚蔞葉酚 (Methyl chavicol) 2-5%'],
+w:'不可使用在幼兒及懷孕婦女上'},
+{n:'歐白芷根',e:'Angelica Root',la:'Angelica archangelica',fa:'繖形科',
+p:['主治傷風感冒及大病初癒','化痰、保肝、健胃','體虛氣弱、手腳冰冷','疲勞、偏頭痛、壓力','肌肉疼痛、關節炎、風濕病','毒素積聚、痛風、促進淋巴排毒','乾咳、支氣管炎','貧血、消化不良','補氣補血','增強免疫能力'],
+c:['單萜烯：α-蒎烯 (alpha-pinene) 26%','單萜烯：δ-3-蒈烯 (delta-3-carene) 18%','單萜烯：月桂烯 (Myrcene) 5%','內酯：環十五內脂 (Pentadecanolide) 微量'],
+w:'高度光敏感性，12小時內不要暴露皮膚於紫外光下'},
+{n:'綠花白千層',e:'Niaouli',la:'Melaleuca viridiflora',fa:'桃金孃科',
+p:['肌肉疼痛、風濕','循環不佳、靜脈曲張、痔瘡','真菌感染、痤瘡、割傷','鼻竇炎、支氣管炎','病毒性肝炎、胃潰瘍','膀胱炎','纖維瘤、無月經'],
+c:['氧化物：1,8 桉油醇 (1,8 cineole) 60%','醇類：綠花白千層醇 (viridiflorol) 4%'],
+w:'懷孕初期避免使用'},
+{n:'香桃木',e:'Myrtle',la:'Myrtus communis',fa:'桃金孃科',
+p:['抗氧化','抗細菌','油性皮膚、毛孔粗大','氣喘、支氣管炎','慢性咳嗽、感冒','膀胱炎','白帶','滋補子宮'],
+c:['單萜烯：松烯 (Pinene) 54%','氧化物：1,8 桉油醇 (1,8 cineole) 24%'],
+w:''},
+{n:'松紅梅',e:'Manuka',la:'Leptospermum scoparium',fa:'桃金孃科',
+p:['抗細菌、抗病毒及抗真菌','促進傷口癒合、痤瘡、皮膚炎','上及下呼吸道感染、鼻竇炎、哮喘','消炎、止痛、抗組織胺','增強免疫能力','念珠菌感染'],
+c:['倍半萜烯：蛇床烯 (7-epi-α-Selinene) 15%','倍半萜烯：反式菖蒲烯 (trans-Calamenene) 15%','倍半萜酮：纖精酮 (Leptospermone) 17%'],
+w:''},
+{n:'廣藿香',e:'Patchouli',la:'Pogostemon cablin',fa:'唇形花科',
+p:['神經疲乏及壓力','痤瘡、粗糙及龜裂的皮膚','頭皮屑及濕疹','真菌感染、油性皮膚','抑制食慾','抗老回春抗皺','幫助傷口癒合、抗菌'],
+c:['倍半萜烯：癒創木烯 30%','倍半萜烯：廣藿香烯 9%','醇類：廣藿香醇 30.6%'],
+w:''},
+{n:'依蘭依蘭',e:'Ylang Ylang',la:'Cananga odorata',fa:'番荔枝科',
+p:['情緒低落、壓力、失眠','高血壓、心悸、心跳過速','痤瘡、油性皮膚','刺激分泌幫助糖尿病','胃部及腸道感染','膀胱炎、泌尿感染','催情、陽萎及性冷感'],
+c:['Extra：酯類：乙酸牻牛兒酯 15%','Complete：倍半萜烯：大根老鸛草烯 22%'],
+w:''},
+{n:'安息香',e:'Benzoin',la:'Styrax benzoin',fa:'安息香科',
+p:['慰藉、抑鬱、哀傷、神經緊張','關節炎、痛風、循環不佳、風濕','割傷、皸裂皮膚、發炎及過敏','哮喘、支氣管炎、咳嗽','寒顫、絞痛'],
+c:['蘇門答臘：酯類：笨甲酸苄酯 55%；酸類：肉桂酸 4%','暹羅：醇類：乙醇 45%；酸類：安息香酸 42%；醛類：香草醛 1%'],
+w:''},
+{n:'肉豆蔻',e:'Nutmeg',la:'Myristica fragrans',fa:'肉豆蔻科',
+p:['腸胃脹氣、消化不良、噁心','月經不來、性無能、性冷感','細菌感染','神經痛、精神衰弱','關節炎、肌肉酸痛、風濕痛','改善循環'],
+c:['單萜烯：檜烯 (Sabinene) 42%','單萜烯：α-蒎烯 (α-pinene) 15%','醚類：欖香脂醚 (Elemicin) 3.5%','醚類：肉豆蔻醚 (Myristicin) 2.6%'],
+w:'高劑量使用可能造成中毒症狀'},
+{n:'黑胡椒',e:'Black Pepper',la:'Piper nigrum',fa:'胡椒科',
+p:['止痛、殺菌','促進血液循環、去除瘀青、改善手腳冰冷','關節發炎、扭傷、肌肉疲勞','改善便秘、食慾不振','傷風、流行性感冒','消除脂肪，幫助消化'],
+c:['倍半萜烯：丁香油烴 (β-Caryophyllene) 25%','單萜烯：檸檬烯 (Limonene) 15%','單萜烯：δ-3-蒈烯 (delta-3-carene) 14%'],
+w:''}
+];
+
+O.forEach(o=>{o.fa=nf(o.fa);});
+
+const FM={
+"番荔枝科":["平伏 (Soothing)","平衡 (Balancing)","平靜 (Calming)"],
+"橄欖科":["化痰","促進傷口癒合及潰瘍","減少疤痕組織","具有酸類，親膚性強","護膚抗皺","促進血液循環，活血化瘀","強效抗菌消炎"],
+"半日花科":["促進傷口癒合","止血","提升免疫力","抗病毒"],
+"菊科":["殺菌","平靜","抗過敏性","抗真菌","抗感染","消化不良","發炎","失眠、壓力"],
+"柏科":["抗真菌、抗感染","殺菌","黏液溶解","呼吸系統消毒","消除水腫、排毒","促進循環，有助腎臟淨化","具有收斂特性，可以收緊毛孔"],
+"牻牛兒苗科":["抗紅腫發炎","殺菌","抗毒素","滋補神經","平伏","洗淨及冷卻皮膚"],
+"唇形科":["殺菌、止痛","抗紅腫發炎","治痙攣","通經","促進排汗","呼吸系統","防病毒","平衡","芳香"],
+"樟科":["抗真菌","殺菌效力強勁，快速見效","抗病毒","提升免疫力"],
+"肉豆蔻科":["止痛","幫助減輕肌肉疼痛及痛楚","強力大腦刺激劑"],
+"桃金孃科":["高度殺菌","抗病毒","滋補及刺激激勵","呼吸系統","黏液溶解","有助支氣管擴張","適用於肌肉及關節痛症"],
+"松科":["高度殺菌","黏膜炎","提升腎上腺素","緩和呼吸道發炎","處理關節炎"],
+"胡椒科":["抗黏膜炎","循環系統及消化系統的刺激劑","止痛","化痰"],
+"禾本科":["痤瘡","疼痛及痛楚","促進血液循環","循環系統的刺激劑"],
+"薔薇科":["殺菌","抗病毒","抗紅腫發炎","抗真菌","平衡荷爾蒙","對皮膚有益"],
+"芸香科":["對消化系統有平衡及刺激作用","殺菌","鎮靜神經","精神大振","抗病毒"],
+"檀香科":["平衡神經系統","呼吸系統及排泄系統","乾燥皮膚","調節賀爾蒙"],
+"安息香科":["抗黏膜炎","化痰","皮膚治療","關節痛楚","循環不佳"],
+"繖形科":["幫助消化","分解脂肪","刺激膽汁流動","暖身","刺激","驅風","抗細菌","殺菌","治痙攣","抗紅腫發炎","通經","滋補劑"],
+"敗醬草科":["對神經系統有安神作用","治療神經痛症"],
+"薑科":["消化系統滋補劑","抗黏膜炎","對肌肉系統有和暖作用","止痛，尤其是牙痛"],
+"漆樹科":[]
+};
+
+const CM={};
+function ac(keys,cat,eff,w){const o={cat,eff,w:w||''};keys.forEach(k=>CM[k]=o);}
+ac(["檸檬烯"],"萜烯類/單萜烯",["抗自由基","抗感染","分解脂肪、幫助瘦身","養肝護肝","抑制癌細胞生長"]);
+ac(["α-蒎烯","β-蒎烯","α-松烯","β-松烯","松烯","蒎烯","松烯/蒎烯"],"萜烯類/單萜烯",["增強腎上腺素，對抗壓力","抗關節炎、類似可體松作用","驅蟲、除蟲"]);
+ac(["莰烯","樟烯"],"萜烯類/單萜烯",["空氣中抗菌","殺細菌","化痰","止痛","抗病毒"]);
+ac(["萜品烯","松油烯","γ-松油烯"],"萜烯類/單萜烯",["空氣中抗菌","殺細菌","抗病毒"]);
+ac(["δ-3-蒈烯"],"萜烯類/單萜烯",["空氣中抗菌","化痰","止痛，尤其是肌肉痠痛"]);
+ac(["檜烯"],"萜烯類/單萜烯",["消炎，特別是慢性發炎"]);
+ac(["月桂烯"],"萜烯類/單萜烯",["止痛","抗發炎","鎮靜","增強費洛蒙、增進性魅力"]);
+ac(["α-水芹烯"],"萜烯類/單萜烯",["激勵腎臟排水、利尿","免疫激勵劑：促進吞噬作用"]);
+ac(["α-薑烯"],"萜烯類/倍半萜烯",["促進消化蠕動","暖胃、止嘔","抗發炎","鎮靜"]);
+ac(["倍半水芹烯"],"萜烯類/倍半萜烯",["抗病毒","抗菌","消炎"]);
+ac(["金合歡烯"],"萜烯類/倍半萜烯",["鎮靜神經","抗組織胺（抗過敏）","抗發炎","安撫"]);
+ac(["母菊天藍烴"],"萜烯類/倍半萜烯",["修復肌膚、治療潰瘍","抑制發炎","抗過敏"]);
+ac(["呋喃按-1,3-二烯"],"萜烯類/倍半萜烯",["輕微抗菌","消炎"]);
+ac(["雪松烯","喜馬拉雅烯"],"萜烯類/倍半萜烯",["鎮靜、強化神經","刺激腎上腺皮質素","強化靜脈和淋巴","利尿、去痰","驅蟲","防止脫髮"]);
+ac(["檀香烯"],"萜烯類/倍半萜烯",["輕微抗菌","使安靜"]);
+ac(["白菖烯"],"萜烯類/倍半萜烯",["輕微抗菌","使安靜"]);
+ac(["β-石竹烯","β-丁香油烴","丁香油烴","石竹烯"],"萜烯類/倍半萜烯",["鎮靜","止痛，尤其肌肉痛","消炎"]);
+ac(["大根老鸛草烯"],"萜烯類/倍半萜烯",["輕微抗菌","消炎","費洛蒙效應、催情"]);
+ac(["蛇床烯"],"萜烯類/倍半萜烯",["強化消炎","止痛","抗組織胺"]);
+ac(["反式菖蒲烯"],"萜烯類/倍半萜烯",["強化消炎","止痛","抗組織胺"]);
+ac(["癒創木烯"],"萜烯類/倍半萜烯",["消炎","抗菌","鎮靜安撫"]);
+ac(["廣藿香烯"],"萜烯類/倍半萜烯",["輕微抗菌","消炎","鎮靜"]);
+ac(["沉香醇"],"醇類/單萜醇",["抗菌、抗感染","鎮靜神經、安眠","提升免疫力","振奮情緒"]);
+ac(["天竺葵醇","牻牛兒醇"],"醇類/單萜醇",["抗黴菌力","對皰疹病毒有抑壓作用","軟化肌膚、保濕回復彈性"]);
+ac(["薄荷醇"],"醇類/單萜醇",["瞬間清涼感","止痛、止癢、抗發炎、收縮血管"]);
+ac(["萜品烯四醇"],"醇類/單萜醇",["增加免疫力","抗感染","平衡肌膚菌種"]);
+ac(["香茅醇"],"醇類/單萜醇",["抗菌驅蟲"]);
+ac(["橙花醇"],"醇類/單萜醇",["對憂鬱症、神經衰弱、失眠有幫助"]);
+ac(["α-萜烯醇"],"醇類/單萜醇",["強烈殺菌劑","抗感染","抗病毒","暖身","神經滋補"]);
+ac(["胡蘿蔔醇"],"醇類/倍半萜醇",["養肝、促進肝細胞再生","皮膚細胞再生、淡化斑點","降低膽固醇","抗皺、美白"]);
+ac(["檀香醇"],"醇類/倍半萜醇",["消炎","抗菌","抗病毒"]);
+ac(["岩蘭醇","岩蘭草醇"],"醇類/倍半萜醇",["增強紅血球帶氧能力","預防與治療痔瘡、靜脈曲張"]);
+ac(["紅沒藥醇"],"醇類/倍半萜醇",["抗炎","降血壓","解除淋巴腫脹"]);
+ac(["雪松醇"],"醇類/倍半萜醇",["抗炎","降血壓","解除淋巴腫脹","靜脈及淋巴管減充血"]);
+ac(["綠花白千層醇"],"醇類/倍半萜醇",["抗炎","降血壓","解除淋巴腫脹"]);
+ac(["廣藿香醇"],"醇類/倍半萜醇",["組織修復肌膚創傷","消除充血腫脹","平衡肌膚","抗黴菌","抗老化、回春抗皺","幫助傷口癒合"]);
+ac(["硬尾醇"],"醇類/雙萜醇",["令人深層放鬆","調節女性荷爾蒙"]);
+ac(["笨乙醇"],"醇類/笨乙醇",["促進皮膚細胞修護","提升免疫力","抗菌、抗病毒","振奮、催情"]);
+ac(["丁香酚"],"酚類",["止痛、麻醉","暖身、促進血液循環","抗菌、抗感染","強大抗氧化劑","催情"],"對肝臟具毒性、可能引致皮膚過敏");
+ac(["百里酚"],"酚類",["抗細菌、抗病毒、防腐","激勵免疫系統","止痛、消炎","滋補神經系統","促進血液循環","抗氧化力強"],"對肝臟具毒性、可能引致皮膚過敏");
+ac(["香荊芥酚"],"酚類",["強力抗菌殺菌劑","對神經及免疫系統有激勵作用","抗氧化、抗腫瘤"],"對肝臟具毒性");
+ac(["檸檬醛","牻牛兒醛","橙花醛"],"醛類/脂肪醛",["遏止發炎疼痛","提升免疫能力和抗菌","調節神經系統","保護血管抗凝血"],"皮膚黏膜有強烈刺激");
+ac(["香茅醛"],"醛類/脂肪醛",["肌肉、韌帶消炎止痛","驅蟲","回復韌帶彈性"],"某程度上對皮膚造成刺激");
+ac(["肉桂醛"],"醛類/芳香醛",["抗菌能力非常強勁","強大抗病毒能力","降低發炎反應","提升免疫","促進血液循環","驅風、利消化","控制血糖"],"有高度肌膚刺激性");
+ac(["香草醛"],"醛類/芳香醛",["抗氧化","鎮靜、舒緩情緒","安撫神經系統"]);
+ac(["樟腦"],"酮類/單萜酮",["發炎止痛","肌肉疼痛、退化性關節炎","驅蟲、防蟲"],"癲癇禁用；孕婦、嬰兒禁用");
+ac(["薄荷酮"],"酮類/單萜酮",["平復及鎮靜","分解黏液及脂肪","促進傷口復原"],"高劑量有中毒風險");
+ac(["松香芹酮"],"酮類/單萜酮",["平復及鎮靜","分解黏液及脂肪"],"神經毒性風險");
+ac(["香芹酮"],"酮類/單萜酮",["溶解痰液"],"孕婦及嬰兒不建議使用");
+ac(["馬鞭草酮"],"酮類/單萜酮",["養肝排毒","幫助肝臟/皮膚細胞再生"]);
+ac(["異松樟酮"],"酮類/單萜酮",["強力抗病毒","抗黏膜發炎、溶解黏液"],"高劑量危險");
+ac(["意大利酮"],"酮類/倍半萜酮",["散瘀、疏通擴張血管","促進細胞再生與組織修復","強效美白功能"]);
+ac(["纈草酮"],"酮類/倍半萜酮",["鎮靜"]);
+ac(["大西洋酮"],"酮類/倍半萜酮",["幫助神經傳導","改善水腫、消脂","抗菌、改善支氣管炎","誘導癌細胞凋亡、抗腫瘤"]);
+ac(["纖精酮"],"酮類/倍半萜酮",["溶解黏液、化痰","促進皮膚再生","強大細胞再生修復能力","抗發炎、消血腫","對單純皰疹有效"]);
+ac(["乙酸沉香酯"],"酯類",["安撫情緒、舒緩神經、助眠","平靜心情","抗發炎、抗真菌"]);
+ac(["乙酸龍腦酯"],"酯類",["抗痙攣","消炎"]);
+ac(["乙酸牻牛兒酯"],"酯類",["抗痙攣，尤其氣管及腸胃痙攣"]);
+ac(["乙酸丁香酯"],"酯類",["抗痙攣","消炎"]);
+ac(["乙酸萜品酯"],"酯類",["抗痙攣、腸絞痛效果佳","增加呼吸道順暢"]);
+ac(["歐白芷酸異丁酯"],"酯類",["放鬆效果","抗痙攣、安撫神經系統","消除驚嚇"]);
+ac(["歐白芷酸異戍酯"],"酯類",["抗痙攣","消炎"]);
+ac(["笨甲酸苄酯","苯甲酸苄酯"],"酯類",["抗寄生蟲","定香劑","舒緩呼吸道","抗菌"]);
+ac(["1,8 桉油醇","1,8 桉樹腦","1,8-桉油醇"],"氧化物",["抗菌","呼吸系統炎症","祛痰、溶解黏液","乾化黏膜","促進循環"],"有神經毒性、不適宜6歲以下");
+ac(["玫瑰氧化物"],"氧化物",["化解黏液","排痰"]);
+ac(["紅沒藥醇氧化物"],"氧化物",["化解黏液","排痰"]);
+ac(["甲基醚蔞葉酚"],"醚類/酚醚類",["抗腸胃痙攣和抽筋","消炎止痛","經痛、頭痛、消除脹氣"]);
+ac(["反式洋茴香腦"],"醚類/酚醚類",["抗痙攣（子宮卵巢）","類雌激素、促進泌乳","促副交感神經鎮靜"]);
+ac(["薄荷呋喃"],"醚類",["抗菌及殺菌","鎮靜"],"有強烈肝毒性");
+ac(["欖香脂醚"],"醚類/酚醚類",["鎮靜神經系統","助消化","抗菌"]);
+ac(["肉豆蔻醚"],"醚類/酚醚類",["大腦興奮","鎮痛止痛效果強","抗氧化","促進胃液分泌及腸蠕動"]);
+ac(["佛手柑內酯"],"內酯類/呋喃香豆素",["抗微生物","抗凝血","提升情緒","鎮靜"]);
+ac(["瑟丹內酯"],"內酯類/苯酞內酯",["降低收縮壓","良好消炎藥","提升肝臟分解毒素功能"]);
+ac(["環十五內脂","環十五內酯"],"內酯類/大環內酯",["定香劑","免疫調節","費洛蒙效應"]);
+ac(["玫瑰蠟"],"其他",[]);
+ac(["肉桂酸"],"酸類",["消炎","抗菌","抗氧化"]);
+ac(["安息香酸"],"酸類",["防腐","抗菌","消炎"]);
+ac(["乙醇"],"醇類/其他",["溶劑","防腐"]);
+
+const SUPP=[
+["驅蟲|驅蚊|蝨|疥瘡|蟲咬|跳蚤|蚊蟲","香茅醛|香茅醇|檸檬醛|牻牛兒醛|橙花醛|檸檬烯|松烯|蒎烯|樟腦","萜烯類和醛類成分的揮發性氣味能干擾昆蟲嗅覺受體和神經系統，研究證實具天然驅蟲效果（Journal of Medical Entomology）"],
+["抗真菌|真菌|香港腳|念珠菌|環癬|癬|鵝口瘡","萜品烯四醇|沉香醇|牻牛兒醇|天竺葵醇|丁香酚|百里酚|香荊芥酚|檸檬醛|牻牛兒醛","醇類/酚類/醛類成分能破壞真菌細胞膜的脂質雙分子層結構，研究證實對白念珠菌等具顯著抗真菌活性（Journal of Antimicrobial Chemotherapy）"],
+["降血壓|高血壓|血壓","沉香醇|乙酸沉香酯|乙酸牻牛兒酯|大根老鸛草烯|雪松醇|紅沒藥醇|綠花白千層醇","酯類和倍半萜醇類能透過調節自律神經、放鬆血管平滑肌來降低血壓，研究顯示吸聞後收縮壓和舒張壓均有下降（European Journal of Preventive Cardiology）"],
+["失眠|助眠|睡眠","沉香醇|乙酸沉香酯|橙花醇|纈草酮|白菖烯|歐白芷酸異丁酯|歐白芷酸異戍酯|檸檬烯|大根老鸛草烯","沉香醇和酯類成分能調節GABAa受體活性，增強抑制性神經傳遞，產生鎮靜和促進睡眠的效果（Frontiers in Behavioral Neuroscience）"],
+["抑鬱|情緒|焦慮|壓力|恐懼|憂慮|不安|抑鬱焦慮|驚嚇|沮喪|哀傷|神經緊張|疲乏|疲竭","沉香醇|乙酸沉香酯|檸檬烯|橙花醇|佛手柑內酯|笨乙醇|大根老鸛草烯","沉香醇/檸檬烯等成分能影響血清素(5-HT)和多巴胺系統，透過嗅覺通路直接作用於邊緣系統，研究證實可降低皮質醇水平、提升情緒（Phytomedicine）"],
+["經痛|月經|更年期|經前|荷爾蒙|閉經|痛經|調經|無月經|白帶|生殖","硬尾醇|反式洋茴香腦|乙酸沉香酯|沉香醇|甲基醚蔞葉酚|牻牛兒醇|香茅醇|檸檬烯","硬尾醇結構類似雌激素可調節女性荷爾蒙平衡；酯類的抗痙攣作用能放鬆子宮平滑肌以緩解經痛；反式洋茴香腦具類雌激素效應（Reproductive Toxicology; Journal of Ethnopharmacology）"],
+["靜脈曲張|痔瘡|靜脈|淋巴|靜脈炎","雪松醇|岩蘭醇|綠花白千層醇|松烯|蒎烯|紅沒藥醇|雪松烯","倍半萜醇類能收縮靜脈壁、促進靜脈血液回流，α-蒎烯可刺激腎上腺皮質素分泌（類似可體松），有助消炎和強化血管壁（Phytotherapy Research）"],
+["頭痛|偏頭痛","薄荷醇|沉香醇|乙酸沉香酯|樟腦|β-石竹烯|丁香油烴|歐白芷酸異丁酯|纈草酮","薄荷醇通過激活TRPM8受體產生清涼感並收縮血管，研究證實外用10%薄荷醇凝膠可顯著緩解緊張性頭痛；沉香醇的鎮靜作用也有助減輕壓力性頭痛（Clinical Therapeutics; Cephalalgia）"],
+["循環|血液循環|手腳冰冷|瘀青|活血","丁香酚|百里酚|肉桂醛|檸檬烯|丁香油烴|松烯|蒎烯|δ-3-蒈烯|α-薑烯","酚類和醛類成分具有暖身促進微血管擴張的特性，倍半萜烯能局部增加血流量，研究顯示可改善末梢循環（Journal of Physiological Anthropology）"],
+["水腫|利尿|排水|排毒|毒素|橘皮組織|橙皮脂肪|蜂窩組織","檸檬烯|α-水芹烯|松烯|蒎烯|雪松烯|雪松醇|大西洋酮","檸檬烯和α-蒎烯具有利尿特性，能促進腎臟過濾和淋巴液流動；α-水芹烯特別能激勵腎臟排水功能（European Journal of Pharmacology）"],
+["消化|腸胃|脹氣|便秘|食慾|嘔心|嘔吐|胃|腹瀉|絞痛|驅風","檸檬烯|α-薑烯|乙酸萜品酯|薄荷醇|薄荷酮|肉桂醛|甲基醚蔞葉酚|乙酸牻牛兒酯|欖香脂醚|肉豆蔻醚|香芹酮","檸檬烯能促進胃腸蠕動和膽汁分泌，研究顯示d-檸檬烯可有效緩解胃灼熱；薄荷醇通過阻斷鈣離子通道放鬆腸道平滑肌；酯類具抗痙攣作用（Alternative Medicine Review; BMJ）"],
+["肝臟|護肝|肝膽|膽石|膽汁|養肝|排毒|淨化肝臟|肝功能","檸檬烯|馬鞭草酮|胡蘿蔔醇|瑟丹內酯|薄荷酮","檸檬烯能促進肝臟第一、二期解毒酶活性，馬鞭草酮和胡蘿蔔醇可促進肝細胞再生，研究顯示d-檸檬烯可溶解膽固醇型膽結石（Journal of Clinical Gastroenterology）"],
+["肌肉|僵硬|風濕|扭傷|腰痛|坐骨神經","樟腦|β-石竹烯|丁香油烴|薄荷醇|松烯|蒎烯|δ-3-蒈烯|莰烯|月桂烯|乙酸龍腦酯","β-丁香油烴為天然CB2受體激動劑，能在不引起精神活性的情況下抗炎鎮痛；樟腦和薄荷醇通過反刺激機制緩解肌肉疼痛（PNAS; European Journal of Pain）"],
+["關節|關節炎|類風濕","松烯|蒎烯|β-石竹烯|丁香油烴|檜烯|母菊天藍烴|紅沒藥醇|樟腦|莰烯","α-蒎烯具有類似可體松的抗炎作用，能抑制NF-κB通路減少關節炎症；β-丁香油烴是CB2激動劑，可顯著減輕關節腫脹（Life Sciences; European Journal of Pharmacology）"],
+["痤瘡|暗瘡|粉刺|油性皮膚|油膩|皮脂|控油","萜品烯四醇|沉香醇|牻牛兒醇|天竺葵醇|檸檬醛|牻牛兒醛|百里酚|松烯|蒎烯|廣藿香醇","萜品烯四醇等醇類成分具有廣譜抗菌作用，可殺滅痤瘡丙酸桿菌；研究顯示5%茶樹油凝膠治療痤瘡效果與5%過氧化苯甲酰相當（Medical Journal of Australia）"],
+["傷口|癒合|止血|結痂|割傷|燒傷|潰瘍|疤痕","α-蒎烯|松烯|蒎烯|莰烯|意大利酮|母菊天藍烴|沉香醇|廣藿香醇|纖精酮|紅沒藥醇","α-蒎烯能促進成纖維細胞增殖和膠原蛋白合成，加速傷口癒合；意大利酮（永久花）能散瘀並促進細胞再生；廣藿香醇可修復皮膚組織（Molecules; Wound Repair and Regeneration）"],
+["濕疹|牛皮癬|皮膚炎|敏感|過敏|抗過敏|紅疹","母菊天藍烴|紅沒藥醇|金合歡烯|沉香醇|乙酸沉香酯|歐白芷酸異丁酯","母菊天藍烴和紅沒藥醇是強效抗組織胺和抗發炎劑，能抑制肥大細胞脫顆粒，減少組織胺釋放；研究顯示能顯著減輕過敏性皮膚反應（International Journal of Molecular Sciences）"],
+["美白|抗皺|抗衰老|抗老|回春|再生|細胞再生|淡斑","意大利酮|胡蘿蔔醇|廣藿香醇|檸檬烯|α-蒎烯|纖精酮|母菊天藍烴|笨乙醇","意大利酮能抑制酪氨酸酶活性（美白）；胡蘿蔔醇促進皮膚細胞更新、淡化色素沉著；廣藿香醇促進成纖維細胞增殖、增加膠原蛋白合成（Journal of Cosmetic Dermatology）"],
+["免疫|免疫力|免疫系統","萜品烯四醇|α-蒎烯|松烯|蒎烯|百里酚|香荊芥酚|沉香醇|檸檬烯|1,8 桉油醇|笨乙醇","萜品烯四醇能激活白血球吞噬作用；α-蒎烯可刺激腎上腺皮質素分泌以增強免疫應答；研究顯示茶樹精油吸聞後可顯著提升NK細胞活性（International Immunopharmacology）"],
+["抗病毒|病毒|皰疹|感冒|流行性感冒|流感|傷風|發燒|水痘","α-蒎烯|松烯|蒎烯|莰烯|1,8 桉油醇|沉香醇|異松樟酮|丁香酚|百里酚|檸檬烯|倍半水芹烯|纖精酮","萜烯類和醇類成分能干擾病毒包膜的脂質層，阻止病毒與宿主細胞的結合；1,8桉油醇可抑制病毒複製；研究顯示多種精油成分對流感病毒、HSV-1/2均有顯著抑制作用（Antiviral Research; Virology Journal）"],
+["膀胱炎|尿道炎|泌尿","沉香醇|萜品烯四醇|百里酚|1,8 桉油醇|松烯|蒎烯|檀香醇|檸檬烯","醇類和氧化物成分經由腎臟代謝排出，在泌尿道中具有直接殺菌作用；研究顯示檀香醇對尿路致病性大腸桿菌具有顯著抗菌活性（Fitoterapia）"],
+["脫髮|頭皮屑|頭髮|頭皮","松烯|蒎烯|雪松烯|檸檬烯|萜品烯四醇|沉香醇|樟腦","單萜烯能促進頭皮血液微循環，為毛囊提供更多營養；雪松烯有文獻記載的防脫髮功效；研究顯示迷迭香精油促進頭髮生長的效果與2%米諾地爾相當（SKINmed Journal）"],
+["糖尿|血糖","1,8 桉油醇|肉桂醛|檸檬烯","1,8桉油醇和肉桂醛能提高胰島素敏感性，促進葡萄糖攝取；研究顯示肉桂提取物可降低空腹血糖達18-29%（Diabetes Care; Journal of the American College of Nutrition）"],
+["痙攣|抗痙攣|抽筋","乙酸沉香酯|乙酸牻牛兒酯|乙酸萜品酯|乙酸龍腦酯|歐白芷酸異丁酯|歐白芷酸異戍酯|乙酸丁香酯|反式洋茴香腦|甲基醚蔞葉酚|薄荷醇","酯類成分能阻斷鈣離子通道，放鬆平滑肌和骨骼肌的過度收縮；研究證實酯類是精油中最有效的抗痙攣成分類別（Planta Medica）"],
+["哮喘|支氣管|呼吸道|呼吸系統|黏膜|袪痰|化痰|痰|咳嗽|鼻竇|鼻炎|喉嚨|肺","1,8 桉油醇|1,8 桉樹腦|1,8-桉油醇|松烯|蒎烯|樟腦|莰烯|薄荷醇|乙酸沉香酯|異松樟酮|大西洋酮|香芹酮|薄荷酮|纖精酮","1,8桉油醇能促進支氣管纖毛運動，加速痰液排出，並能擴張支氣管平滑肌；α-蒎烯具有支氣管擴張作用；研究顯示吸聞桉油醇可顯著改善鼻竇炎症狀（The Laryngoscope; Respiratory Research）"],
+["性慾|性冷感|陽萎|催情|性功能","大根老鸛草烯|月桂烯|丁香酚|笨乙醇|肉豆蔻醚|橙花醇|牻牛兒醇","大根老鸛草烯和月桂烯具有費洛蒙效應；丁香酚能暖身促進血流；笨乙醇令人振奮和積極；研究顯示多種精油成分能提升性激素水平和改善性功能（Evidence-Based Complementary and Alternative Medicine）"],
+["止汗|除臭|多汗","牻牛兒醇|天竺葵醇|檸檬醛|牻牛兒醛|松烯|蒎烯","牻牛兒醇等醇類成分具有收斂和抗菌特性，能抑制汗液中細菌分解蛋白質所產生的異味；松烯的收斂作用可收縮汗腺開口（International Journal of Cosmetic Science）"],
+["保濕|皮膚再生|肌膚|潤膚|皮脂|護膚","牻牛兒醇|天竺葵醇|胡蘿蔔醇|廣藿香醇|沉香醇|紅沒藥醇|纖精酮|笨乙醇","牻牛兒醇能軟化肌膚、促進角質層水分保持；紅沒藥醇可舒緩發炎性皮膚問題；廣藿香醇促進成纖維細胞增殖（International Journal of Dermatology）"],
+["膽固醇","胡蘿蔔醇|檸檬烯","胡蘿蔔醇已被研究證實能降低血清膽固醇水平；檸檬烯可抑制HMG-CoA還原酶（膽固醇合成的關鍵酶）（Journal of Agricultural and Food Chemistry）"],
+["心悸|心臟|心跳","沉香醇|乙酸沉香酯|大根老鸛草烯|檸檬烯|佛手柑內酯","沉香醇和酯類成分能調節自律神經系統，抑制交感神經興奮，減慢心率；研究證實薰衣草精油吸聞後可顯著降低心率變異性中的交感神經指標（European Journal of Preventive Cardiology）"],
+["集中|注意力|記憶|精神|提振|提神|大腦|認知|腦退化","1,8 桉油醇|1,8 桉樹腦|松烯|蒎烯|檸檬烯|薄荷醇|百里酚","1,8桉油醇和α-蒎烯能抑制乙醯膽鹼酯酶(AChE)活性，增加大腦乙醯膽鹼濃度，從而增強認知功能和記憶力；研究顯示迷迭香精油可提升記憶力高達75%（Therapeutic Advances in Psychopharmacology）"],
+["牙痛|牙齒|牙齦|牙肉|牙床|口腔","丁香酚|薄荷醇|肉桂醛","丁香酚是被FDA認可的牙科鎮痛劑，能可逆性阻斷神經傳導，產生局部麻醉效果；WHO已將其列入基本藥物清單中的牙科用藥（WHO Model List of Essential Medicines）"],
+["甲狀腺","丁香酚","研究發現丁香酚能影響甲狀腺激素的代謝途徑，對甲狀腺功能亢進有輔助調節作用（Journal of Biochemical and Molecular Toxicology）"],
+["貧血","檸檬烯|α-蒎烯","檸檬精油中的檸檬烯和松烯成分能促進鐵質的吸收利用，維他命C的協同作用（常與柑橘類精油並用）也有助於改善貧血狀況（Nutrition Research）"],
+["分解脂肪|瘦身|減肥|癡肥","檸檬烯","研究顯示檸檬烯能激活PPAR-α受體，促進脂肪酸β-氧化（脂肪分解）；外用時可促進局部脂肪代謝（European Journal of Pharmacology）"],
+["止血|出血|收斂","松烯|蒎烯|α-蒎烯|雪松醇|莰烯","α-蒎烯和莰烯具有收斂特性，能促進血小板聚集和凝血因子活化，加速止血；雪松醇具有收縮血管的作用（Journal of Natural Products）"],
+["寒顫|暖身|手腳冰冷|暖和","丁香酚|肉桂醛|α-薑烯|倍半水芹烯|檸檬烯|δ-3-蒈烯","酚類、醛類和薑烯類成分具有促進末梢血管擴張和血流加速的特性，能產生溫暖感；研究顯示薑精油外用可顯著提高皮膚表面溫度（Journal of Physiological Anthropology）"],
+["妊娠紋","沉香醇|牻牛兒醇|天竺葵醇|檸檬烯|橙花醇","醇類成分能促進膠原蛋白和彈性蛋白合成，增強皮膚彈性；研究顯示含有天竺葵醇等成分的精油按摩能有效預防和減輕妊娠紋（Journal of the European Academy of Dermatology）"],
+["痛風","檸檬烯|α-蒎烯|松烯|蒎烯|δ-3-蒈烯|月桂烯","檸檬烯可促進肝臟和腎臟的代謝解毒功能，有助加速尿酸排出；α-蒎烯的類可體松抗炎作用能減輕痛風性關節炎的炎症反應（Inflammation Research）"],
+["抗腫瘤|癌|癌細胞","檸檬烯|大西洋酮|香荊芥酚","研究顯示d-檸檬烯能誘導癌細胞凋亡，抑制Ras蛋白活化；大西洋酮對多種癌細胞株具有細胞毒性；目前已進入臨床試驗階段（Cancer Prevention Research; BMC Complementary Medicine）"],
+["扁桃|咽喉|喉嚨|聲帶","1,8 桉油醇|沉香醇|牻牛兒醇|檸檬醛|α-蒎烯|松烯","醇類和氧化物成分具有局部殺菌和消炎作用，能減輕咽喉黏膜的腫脹和疼痛；研究顯示以含1,8桉油醇的蒸氣吸聞可顯著緩解喉嚨疼痛（The Laryngoscope）"],
+["子宮|收縮|分娩|生產","丁香酚|肉桂醛|反式洋茴香腦|硬尾醇","丁香酚和肉桂醛能刺激子宮平滑肌收縮；反式洋茴香腦和硬尾醇具有類雌激素效應，可影響子宮功能；傳統產科會使用這些成分來促進分娩（Journal of Ethnopharmacology）"],
+["冥想|放鬆|放下|寬恕|安撫|慰藉","檀香醇|沉香醇|乙酸沉香酯|白菖烯|纈草酮|廣藿香醇|金合歡烯","倍半萜醇類（如檀香醇）具有深層鎮靜作用，能降低腦波頻率至α波和θ波狀態，促進冥想和放鬆；研究顯示檀香醇可降低交感神經活性並增加副交感神經活性（Planta Medica）"],
+["食慾|厭食|暴食","檸檬烯|沉香醇|佛手柑內酯|廣藿香醇","佛手柑精油中的檸檬烯和沉香醇能透過調節下丘腦攝食中樞影響食慾，研究發現佛手柑精油吸聞能減少皮質醇引起的壓力性進食；廣藿香醇則研究顯示能抑制食慾（Neuroscience Letters）"],
+["抗氧化","百里酚|丁香酚|香荊芥酚|檸檬烯|肉豆蔻醚","酚類成分因其羥基結構能有效清除自由基，ORAC(氧自由基吸收能力)值極高；研究顯示丁香精油的抗氧化能力在所有天然物質中名列前茅（Journal of Agricultural and Food Chemistry）"]
+];
+
+// =============== SAFETY FILTER DEFINITIONS ===============
+const SAFETY_FILTERS = [
+  { key:'skin', label:'適合敏感肌', icon:'✋', desc:'排除有皮膚刺激/致敏警告的精油',
+    test: w => /致敏|皮膚刺激|皮膚過敏|引致敏感|引起皮膚|黏膜/.test(w) },
+  { key:'child', label:'適合幼兒', icon:'👶', desc:'排除不適合嬰幼兒/兒童使用的精油',
+    test: w => /幼兒|兒童|嬰兒|嬰幼兒|小童|小孩|6歲以下|2歲以下/.test(w) },
+  { key:'preg', label:'適合孕婦', icon:'🤰', desc:'排除含通經/懷孕禁忌的精油',
+    test: w => /懷孕|孕婦|通經/.test(w) },
+  { key:'photo', label:'無光敏性', icon:'☀️', desc:'排除含光敏性警告的精油',
+    test: w => /光敏|紫外光|呋喃香豆素/.test(w) },
+  { key:'none', label:'完全無禁忌', icon:'✅', desc:'只顯示無任何使用禁忌的精油',
+    test: w => w && w.trim().length > 0 }
+];
+
+// =============== PARSING & MATCHING ===============
+function parseComp(s){
+  if(s.startsWith('⚠')||s.includes('檸檬醛 citral =')) return null;
+  let str=s.replace(/^(Extra|Complete|蘇門答臘|暹羅)\s*[—:：]\s*/,'');
+  if(str.includes('；')){
+    return str.split('；').map(part=>parseSingle(part.trim())).filter(x=>x);
+  }
+  return [parseSingle(str)].filter(x=>x);
+}
+function parseSingle(str){
+  const ci=str.indexOf('：');
+  const type=ci>-1?str.substring(0,ci).trim():'';
+  const rest=ci>-1?str.substring(ci+1).trim():str.trim();
+  const m=rest.match(/^(.+?)\s*[\(（](.+?)[\)）]\s*(.*)$/);
+  if(m) return {type,cn:m[1].trim(),en:m[2].trim(),pct:m[3].trim(),raw:str};
+  const m2=rest.match(/^(.+?)\s+([\d\.\-<>%]+.*)$/);
+  if(m2) return {type,cn:m2[1].trim(),en:'',pct:m2[2].trim(),raw:str};
+  return {type,cn:rest,en:'',pct:'',raw:str};
+}
+function lookupChem(cn){
+  if(CM[cn]) return CM[cn];
+  for(const k of Object.keys(CM)){
+    if(cn.includes(k)||k.includes(cn)) return CM[k];
+  }
+  return null;
+}
+
+const SYN=[
+  ["抗菌","殺菌","抗感染","抗微生物","抗細菌"],
+  ["止痛","鎮痛","疼痛","痛楚"],
+  ["消炎","抗炎","抗發炎","抗紅腫","遏止發炎"],
+  ["驅蟲","驅蚊","驅蟲劑"],
+  ["助眠","安眠","失眠"],
+  ["抗病毒","防病毒"],
+  ["抗真菌","抗黴菌"],
+  ["黏液","袪痰","化痰","排痰","溶解黏液"],
+  ["傷口","癒合","修復","再生"],
+  ["鎮靜","安撫","安神","平靜"],
+  ["循環","血液","血流"],
+  ["利尿","排水","水腫"],
+  ["收斂","止血","收縮"],
+  ["痤瘡","暗瘡","粉刺"],
+];
+function synMatch(w1,w2){
+  for(const group of SYN){
+    const a=group.some(w=>w1.includes(w));
+    const b=group.some(w=>w2.includes(w));
+    if(a&&b) return true;
+  }
+  return false;
+}
+function hasOverlap(t1,t2){
+  if(synMatch(t1,t2)) return true;
+  for(let i=0;i<t1.length-1;i++){
+    const bi=t1.substring(i,i+2);
+    if(!/[\u4e00-\u9fff]{2}/.test(bi)) continue;
+    if(['的是','及有','與在','可以','用於','有關','引起','使用','功能','效果','問題','情況','作用','相關','幫助','所有','各種','系統','治療','方面'].includes(bi)) continue;
+    if(t2.includes(bi)) return true;
+  }
+  return false;
+}
+function findSuppReasons(prop, oilChemNames){
+  const results=[];
+  SUPP.forEach(row=>{
+    const [pkStr,ckStr,reason]=row;
+    const pks=pkStr.split('|');
+    const cks=ckStr.split('|');
+    if(!pks.some(k=>prop.includes(k))) return;
+    const matchedChems=[];
+    cks.forEach(ck=>{
+      oilChemNames.forEach(cn=>{
+        if((cn.includes(ck)||ck.includes(cn))&&!matchedChems.includes(cn)) matchedChems.push(cn);
+      });
+    });
+    if(matchedChems.length>0) results.push({chems:matchedChems,reason});
+  });
+  return results;
+}
+
+function buildAnalysis(oil){
+  const famFuncs=FM[oil.fa]||[];
+  const chems=[];
+  const chemNames=[];
+  oil.c.forEach(s=>{
+    const parsed=parseComp(s);
+    if(!parsed) return;
+    parsed.forEach(p=>{
+      if(!p) return;
+      const e=lookupChem(p.cn);
+      chems.push({...p,effects:e});
+      chemNames.push(p.cn);
+    });
+  });
+  const chains=[];
+  oil.p.forEach(prop=>{
+    const reasons=[];
+    famFuncs.forEach(f=>{
+      if(f.startsWith('*')) return;
+      if(hasOverlap(prop,f)||hasOverlap(f,prop)) reasons.push({layer:'family',text:oil.fa+'→'+f});
+    });
+    chems.forEach(ch=>{
+      if(!ch.effects) return;
+      ch.effects.eff.forEach(e=>{
+        if(hasOverlap(prop,e)||hasOverlap(e,prop)) reasons.push({layer:'chem',text:ch.cn+(ch.pct?' ('+ch.pct+')':'')+'→'+e});
+      });
+    });
+    if(reasons.length===0){
+      const supps=findSuppReasons(prop,chemNames);
+      supps.forEach(s=>{
+        reasons.push({layer:'ref',text:s.chems.join('、')+'→'+s.reason});
+      });
+    }
+    chains.push({prop,reasons});
+  });
+  return {famFuncs,chems,chains};
+}
+
+// =============== UI STATE ===============
+let searchTerm='';
+let famFilterVal='全部';
+let filterExpanded=false;
+let safOpen=false;
+let safActive=new Set();
+
+function toggleFilterExpand(){
+  filterExpanded=!filterExpanded;
+  const wrap=document.getElementById('famFilter');
+  const scroll=document.getElementById('filterScroll');
+  const icon=document.getElementById('filterIcon');
+  if(filterExpanded){
+    wrap.classList.add('expanded');
+    scroll.classList.remove('filter-scroll');
+    icon.style.transform='rotate(180deg)';
+  } else {
+    wrap.classList.remove('expanded');
+    scroll.classList.add('filter-scroll');
+    icon.style.transform='rotate(0deg)';
+  }
+}
+
+function toggleSafSection(){
+  safOpen=!safOpen;
+  const sec=document.getElementById('safSection');
+  const arrow=document.getElementById('safArrow');
+  if(safOpen){sec.classList.add('open');arrow.style.transform='rotate(180deg)';}
+  else{sec.classList.remove('open');arrow.style.transform='rotate(0deg)';}
+}
+
+function toggleSaf(key){
+  if(safActive.has(key)){safActive.delete(key);}
+  else{
+    if(key==='none'){safActive.clear();safActive.add('none');}
+    else{safActive.delete('none');safActive.add(key);}
+  }
+  updateSafButtons();
+  render();
+}
+
+function clearSafFilters(){
+  safActive.clear();
+  updateSafButtons();
+  render();
+}
+
+function updateSafButtons(){
+  document.querySelectorAll('.saf-btn').forEach(b=>{
+    if(safActive.has(b.dataset.key)) b.classList.add('active');
+    else b.classList.remove('active');
+  });
+  const toggle=document.getElementById('safToggleBtn');
+  const badge=document.getElementById('safBadge');
+  const hints=document.getElementById('safActiveHints');
+  if(safActive.size>0){
+    toggle.classList.add('has-active');
+    badge.textContent=safActive.size;
+    let hintHtml=SAFETY_FILTERS.filter(f=>safActive.has(f.key)).map(f=>`<span class="inline-block text-xs bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full mr-1 whitespace-nowrap">${f.icon} ${f.label}</span>`).join('');
+    hintHtml+=`<button onclick="clearSafFilters()" class="inline-block text-xs text-gray-400 hover:text-rose-500 px-1 whitespace-nowrap">✕ 清除</button>`;
+    hints.innerHTML='<div class="flex items-center gap-0.5 overflow-x-auto" style="scrollbar-width:none">'+hintHtml+'</div>';
+  } else {
+    toggle.classList.remove('has-active');
+    hints.innerHTML='';
+  }
+}
+
+function doSearch(){
+  searchTerm=document.getElementById('search').value.trim().toLowerCase();
+  document.getElementById('clearBtn').style.display=searchTerm?'block':'none';
+  render();
+}
+function setFamFilter(v,btn){
+  famFilterVal=v;
+  document.querySelectorAll('.fam-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function toggleCard(idx){
+  const d=document.getElementById('detail-'+idx);
+  const a=document.getElementById('arrow-'+idx);
+  if(d.classList.contains('open')){d.classList.remove('open');a.textContent='▼';}
+  else{d.classList.add('open');a.textContent='▲';setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'nearest'}),50);}
+}
+
+// =============== SAFETY TAG ===============
+function getSafetyTags(w){
+  if(!w||!w.trim()) return [];
+  const tags=[];
+  if(/致敏|皮膚刺激|皮膚過敏|引致敏感|引起皮膚|黏膜/.test(w)) tags.push({icon:'✋',label:'皮膚刺激',cls:'bg-orange-100 text-orange-700 border-orange-300'});
+  if(/幼兒|兒童|嬰兒|嬰幼兒|小童|小孩|6歲以下|2歲以下/.test(w)) tags.push({icon:'👶',label:'幼兒慎用',cls:'bg-red-100 text-red-700 border-red-300'});
+  if(/懷孕|孕婦|通經/.test(w)) tags.push({icon:'🤰',label:'孕婦慎用',cls:'bg-pink-100 text-pink-700 border-pink-300'});
+  if(/光敏|紫外光|呋喃香豆素/.test(w)) tags.push({icon:'☀️',label:'光敏性',cls:'bg-yellow-100 text-yellow-700 border-yellow-300'});
+  if(/肝毒/.test(w)) tags.push({icon:'🫁',label:'肝毒性',cls:'bg-purple-100 text-purple-700 border-purple-300'});
+  if(/神經毒|癲癎|癲癇/.test(w)) tags.push({icon:'🧠',label:'神經毒性',cls:'bg-indigo-100 text-indigo-700 border-indigo-300'});
+  return tags;
+}
+
+function render(){
+  const app=document.getElementById('app');
+  let filtered=O;
+  if(famFilterVal!=='全部') filtered=filtered.filter(o=>o.fa===famFilterVal);
+  if(searchTerm) filtered=filtered.filter(o=>{
+    const all=(o.n+' '+o.e+' '+o.la+' '+o.fa+' '+o.p.join(' ')+' '+o.c.join(' ')+' '+(o.w||'')).toLowerCase();
+    return all.includes(searchTerm);
+  });
+  // Apply safety filters
+  const totalBefore=filtered.length;
+  SAFETY_FILTERS.forEach(sf=>{
+    if(safActive.has(sf.key)){
+      filtered=filtered.filter(o=>!sf.test(o.w||''));
+    }
+  });
+  const excluded=totalBefore-filtered.length;
+  
+  let countText='找到 '+filtered.length+' 款精油';
+  if(safActive.size>0 && excluded>0) countText+='（已篩除 '+excluded+' 款有禁忌精油）';
+  document.getElementById('count').textContent=countText;
+  
+  if(!filtered.length){app.innerHTML='<div class="text-center py-20 text-gray-400"><div class="text-4xl mb-2">🔍</div>找不到相關精油<br><span class="text-xs">嘗試調整搜尋條件或禁忌篩選</span></div>';return;}
+  
+  let html='';
+  filtered.forEach((oil,idx)=>{
+    const a=buildAnalysis(oil);
+    const hasW=oil.w&&oil.w.trim();
+    const sTags=getSafetyTags(oil.w||'');
+    html+=`<div class="oil-card bg-white rounded-xl border border-gray-200 mb-3 overflow-hidden" id="card-${idx}">
+      <div class="px-3 sm:px-4 py-3 cursor-pointer hover:bg-emerald-50 transition-colors" onclick="toggleCard(${idx})">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0"><div class="flex items-center gap-1.5 flex-wrap"><span class="text-sm sm:text-base font-bold text-gray-800">${oil.n}</span>${!hasW?'<span class="text-xs text-green-500">✅</span>':''}</div><div class="text-xs text-gray-400 truncate">${oil.e}</div></div>
+          <div class="text-right flex-shrink-0"><div class="text-xs text-emerald-600 italic hidden sm:block">${oil.la}</div><div class="text-xs text-gray-400">${oil.fa}</div></div>
+        </div>
+        ${sTags.length?'<div class="flex flex-wrap gap-1 mt-1.5">'+sTags.map(t=>'<span class="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border '+t.cls+'">'+t.icon+' '+t.label+'</span>').join('')+'</div>':''}
+        <div class="flex items-center gap-2 mt-1"><span class="text-xs text-gray-400">📋 ${oil.p.length}項</span><span class="text-xs text-gray-400">🧪 ${a.chems.length}種</span><span class="text-xs text-gray-400 ml-auto" id="arrow-${idx}">▼</span></div>
+      </div>
+      <div class="oil-detail border-t border-gray-100" id="detail-${idx}"><div class="px-3 sm:px-4 py-4 space-y-4">
+        <div><div class="flex items-center gap-2 mb-2 flex-wrap"><span class="lt l1">第一層</span><span class="text-sm font-bold text-amber-800">🌱 科屬 — ${oil.fa}</span></div>
+        <div class="bg-amber-50 rounded-lg p-2.5 sm:p-3 text-sm">${a.famFuncs.length?a.famFuncs.filter(f=>!f.startsWith('*')).map(f=>'<div class="flex items-start gap-2 mb-1"><span class="text-amber-500 flex-shrink-0">▸</span><span class="text-amber-900 text-xs sm:text-sm">'+f+'</span></div>').join(''):'<span class="text-gray-400 text-xs">未收錄此科屬</span>'}</div></div>
+        <div><div class="flex items-center gap-2 mb-2"><span class="lt l2">第二層</span><span class="text-sm font-bold text-blue-800">🧪 化學成分</span></div>
+        <div class="space-y-2">${a.chems.map(ch=>{const info=ch.effects;return `<div class="bg-blue-50 rounded-lg p-2.5 sm:p-3"><div class="flex items-baseline gap-1.5 mb-1 flex-wrap"><span class="font-bold text-blue-800 text-xs sm:text-sm">${ch.cn}</span>${ch.en?'<span class="text-xs text-blue-400">'+ch.en+'</span>':''}${ch.pct?'<span class="text-xs text-blue-500 font-mono">'+ch.pct+'</span>':''}${info?'<span class="text-xs text-blue-400">['+info.cat+']</span>':''}</div>${info?info.eff.map(e=>'<div class="flex items-start gap-1.5 text-xs text-blue-900 mb-0.5"><span class="text-blue-400 flex-shrink-0">•</span><span>'+e+'</span></div>').join(''):'<div class="text-xs text-gray-400">資料庫中未收錄此成分詳細功效</div>'}${info&&info.w?'<div class="text-xs text-red-500 mt-1">⚠️ '+info.w+'</div>':''}</div>`;}).join('')}</div></div>
+        <div><div class="flex items-center gap-2 mb-2"><span class="lt l3">第三層</span><span class="text-sm font-bold text-emerald-800">🔗 底層邏輯推理</span></div>
+        <div class="space-y-2.5">${a.chains.map(ch=>{
+          return `<div class="chain-box"><div class="font-semibold text-gray-800 text-xs sm:text-sm mb-1.5">📌 ${ch.prop}</div>${ch.reasons.length?ch.reasons.map(r=>{
+            const isF=r.layer==='family';
+            const isR=r.layer==='ref';
+            const cls=isF?'cp-f':isR?'cp-r':'cp-c';
+            const icon=isF?'🌱 科屬':isR?'📚 網上資料':'🧪 成分';
+            return `<div class="flex items-start gap-1 text-xs mb-1"><span class="cp ${cls}">${icon}</span><span class="text-gray-600 leading-relaxed break-words">${r.text}</span></div>`;
+          }).join(''):'<div class="text-xs text-gray-400 italic">（此應用主要基於傳統芳療臨床經驗記載，暫無可對應的成分/科屬機制資料）</div>'}</div>`;
+        }).join('')}</div></div>
+        ${hasW?`<div class="bg-red-50 border border-red-200 rounded-lg p-2.5 sm:p-3"><div class="text-xs font-bold text-red-700 mb-1">⚠️ 使用禁忌</div><div class="text-xs text-red-700 leading-relaxed">${oil.w}</div>${sTags.length?'<div class="flex flex-wrap gap-1 mt-2">'+sTags.map(t=>'<span class="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border '+t.cls+'">'+t.icon+' '+t.label+'</span>').join('')+'</div>':''}</div>`:`<div class="bg-green-50 border border-green-200 rounded-lg p-2.5"><div class="text-xs text-green-700">✅ 無特別使用禁忌（一般安全）</div></div>`}
+      </div></div></div>`;
+  });
+  app.innerHTML=html;
+}
+
+// =============== BUILD FILTERS ===============
+const allFams=[...new Set(O.map(o=>o.fa))].sort();
+const fc=document.getElementById('famFilter');
+let fhtml='<button class="fam-btn active" onclick="setFamFilter(\'全部\',this)">全部</button>';
+allFams.forEach(f=>{fhtml+=`<button class="fam-btn" onclick="setFamFilter('${f}',this)">${f}</button>`;});
+fc.innerHTML=fhtml;
+
+// Build safety filter buttons
+const sf=document.getElementById('safFilter');
+let sfhtml='';
+SAFETY_FILTERS.forEach(f=>{
+  sfhtml+=`<button class="saf-btn" data-key="${f.key}" onclick="toggleSaf('${f.key}')" title="${f.desc}"><span>${f.icon}</span> ${f.label}</button>`;
+});
+sfhtml+=`<button class="saf-btn" onclick="clearSafFilters()" style="background:#f9fafb;color:#9ca3af;border-style:dashed">🗑️ 清除全部</button>`;
+sf.innerHTML=sfhtml;
+
+document.getElementById('search').addEventListener('input',doSearch);
+render();
+</script>
+</body>
+</html>
